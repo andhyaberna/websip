@@ -24,6 +24,36 @@
     </form>
 </div>
 
+    <?php
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $flashReset = $_SESSION['flash_reset_password'] ?? null;
+    ?>
+    <?php if ($flashReset): ?>
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="resetModal">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Password Reset Successful</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">New Password for User ID: <?php echo $flashReset['user_id']; ?></p>
+                    <p class="text-2xl font-bold text-blue-600 my-4 select-all bg-gray-100 p-2 rounded"><?php echo $flashReset['password']; ?></p>
+                    <p class="text-xs text-red-500">Save this password now! It will disappear after this page reloads.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button onclick="sendNotify(<?php echo $flashReset['user_id']; ?>, 'email')" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-2">
+                        Send via Email
+                    </button>
+                    <button onclick="sendNotify(<?php echo $flashReset['user_id']; ?>, 'wa')" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 mb-2">
+                        Send via WhatsApp
+                    </button>
+                    <button onclick="closeResetModal()" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <!-- Users Table -->
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
@@ -70,6 +100,7 @@
                                     <button onclick="toggleStatus(<?php echo $user['id']; ?>)" class="text-indigo-600 hover:text-indigo-900">
                                         <?php echo $user['status'] === 'active' ? 'Block' : 'Activate'; ?>
                                     </button>
+                                    <button onclick="resetPassword(<?php echo $user['id']; ?>)" class="text-yellow-600 hover:text-yellow-900">Reset</button>
                                     <button onclick="deleteUser(<?php echo $user['id']; ?>)" class="text-red-600 hover:text-red-900">Delete</button>
                                 <?php endif; ?>
                             </td>
@@ -96,6 +127,46 @@
 <?php endif; ?>
 
 <script>
+async function resetPassword(id) {
+    if (!confirm('Are you sure you want to reset this user\'s password?')) return;
+    
+    try {
+        const res = await fetch(`<?php echo base_url('admin/users/'); ?>${id}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message + '\nThe page will reload to show the new password.');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to reset password');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function sendNotify(id, type) {
+    try {
+        const formData = new FormData();
+        formData.append('type', type);
+        
+        const res = await fetch(`<?php echo base_url('admin/users/'); ?>${id}/notify`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.status === 'sent') {
+            alert('Notification sent successfully!');
+        } else {
+            alert('Failed to send notification: ' + (data.provider_response || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 async function toggleStatus(id) {
     if (!confirm('Are you sure you want to change this user status?')) return;
     
@@ -137,6 +208,19 @@ async function deleteUser(id) {
         }
     } catch (e) {
         alert('Error: ' + e.message);
+    }
+}
+
+async function closeResetModal() {
+    try {
+        await fetch('<?php echo base_url('admin/users/clear-reset-flash'); ?>', {
+            method: 'POST'
+        });
+        document.getElementById('resetModal').style.display = 'none';
+        location.reload(); // Reload to ensure server state is reflected
+    } catch (e) {
+        console.error('Failed to clear flash:', e);
+        document.getElementById('resetModal').style.display = 'none';
     }
 }
 </script>

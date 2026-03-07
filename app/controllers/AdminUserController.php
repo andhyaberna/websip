@@ -3,10 +3,11 @@
 require_once __DIR__ . '/../core/Auth.php';
 require_once __DIR__ . '/../core/DB.php';
 require_once __DIR__ . '/../core/Middleware.php';
+require_once __DIR__ . '/../core/Notifier.php';
 require_once __DIR__ . '/../models/AuditLog.php';
+require_once __DIR__ . '/../core/Gate.php';
 
 class AdminUserController {
-    
     public function __construct() {
         Middleware::auth_admin();
     }
@@ -222,12 +223,131 @@ class AdminUserController {
         $this->jsonResponse(['success' => true, 'message' => 'User deleted successfully']);
     }
 
+    // Reset Password
+    public function resetPassword($id) {
+        if (!$this->wantsJson()) {
+            http_response_code(400);
+            exit;
+        }
+
+        // Authorization Gate
+        if (!Gate::allows('users.reset-password')) {
+            $this->jsonResponse(['error' => 'Unauthorized'], 403);
+            return;
+        }
+
+        // Rate Limiting: Max 5 per hour per user_id
+        $recentResets = AuditLog::countRecentActionForUser('user_password_reset', $id, 60);
+        if ($recentResets >= 5) {
+            $this->jsonResponse(['error' => 'Too many password reset requests for this user. Please try again later.'], 429);
+            return;
+        }
+
+        $db = DB::getInstance();
+        
+        // 1. Validate
+        $stmt = $db->prepare("SELECT id, email FROM users WHERE id = :id AND deleted_at IS NULL");
+        $stmt->execute([':id' => $id]);
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            $this->jsonResponse(['error' => 'User not found'], 404);
+            return;
+        }
+
+        // 2. Generate Password
+        $tempPassword = $this->generateRandomPassword();
+        $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
+
+        // 3. Update DB
+        $update = $db->prepare("UPDATE users SET password_hash = :p WHERE id = :id");
+        $update->execute([':p' => $hash, ':id' => $id]);
+
+        // 4. Audit Log
+        AuditLog::log('user_password_reset', ['user_id' => $id, 'email' => $user['email']]);
+
+        // 5. Store in Flash (Session)
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $_SESSION['flash_reset_password'] = [
+            'user_id' => $id,
+            'password' => $tempPassword,
+            'email' => $user['email'] // Useful for notification
+        ];
+
+        // 6. Return JSON (Password NOT in JSON, only success status)
+        $this->jsonResponse(['success' => true, 'message' => 'Password reset successfully']);
+    }
+
+    // Send Notification
+    public function sendNotification($id) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit;
+        }
+
+        if (!Gate::allows('users.notify')) {
+            $this->jsonResponse(['error' => 'Unauthorized'], 403);
+            return;
+        }
+
+        // Get Password from Session
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $flash = $_SESSION['flash_reset_password'] ?? null;
+
+        if (!$flash || $flash['user_id'] != $id) {
+            $this->jsonResponse(['error' => 'Session expired or invalid. Please reset password again.'], 400);
+            return;
+        }
+
+        $type = $_POST['type'] ?? '';
+        $tempPassword = $flash['password'];
+
+        $db = DB::getInstance();
+        $stmt = $db->prepare("SELECT email, phone FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $user = $stmt->fetch();
+
+        if ($type === 'email') {
+            $htmlBody = "<p>Halo,</p><p>Password akun Anda telah direset oleh Admin.</p><p>Password Baru: <strong>{$tempPassword}</strong></p><p>Silakan login dan segera ganti password Anda.</p>";
+            $result = Notifier::sendEmail($user['email'], 'Reset Password Akun', $htmlBody);
+        } elseif ($type === 'wa') {
+            $message = "Password baru Anda: {$tempPassword}. Simpan baik-baik.";
+            $result = Notifier::sendWA($user['phone'], $message);
+        } else {
+            $this->jsonResponse(['error' => 'Invalid notification type'], 400);
+            return;
+        }
+
+        $this->jsonResponse($result);
+    }
+
+    public function clearResetFlash() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit;
+        }
+        
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        unset($_SESSION['flash_reset_password']);
+        
+        $this->jsonResponse(['success' => true]);
+    }
+
+    private function generateRandomPassword($length = 12) {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $password;
+    }
+
     private function wantsJson() {
         return (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
                (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
     }
 
-    private function jsonResponse($data, $code = 200) {
+    protected function jsonResponse($data, $code = 200) {
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode($data);

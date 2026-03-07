@@ -10,6 +10,8 @@ require_once __DIR__ . '/../app/core/DB.php';
 require_once __DIR__ . '/../app/core/Auth.php';
 require_once __DIR__ . '/../app/core/Router.php';
 require_once __DIR__ . '/../app/core/functions.php';
+require_once __DIR__ . '/../app/core/Gate.php';
+require_once __DIR__ . '/../app/config/gates.php';
 
 // Load Controllers
 require_once __DIR__ . '/../app/controllers/HomeController.php';
@@ -60,6 +62,9 @@ $router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUse
 $router->register('GET', '/admin/users', 'AdminUserController@index');
 $router->register('POST', '/admin/users/{id}/status', 'AdminUserController@toggleStatus');
 $router->register('POST', '/admin/users/{id}/delete', 'AdminUserController@delete');
+$router->register('POST', '/admin/users/{id}/reset-password', 'AdminUserController@resetPassword');
+$router->register('POST', '/admin/users/{id}/notify', 'AdminUserController@sendNotification');
+$router->register('POST', '/admin/users/clear-reset-flash', 'AdminUserController@clearResetFlash');
 
 // User Dashboard Routes
 $router->register('GET', '/user/dashboard', 'DashboardController@index'); // Keep for backward compat
