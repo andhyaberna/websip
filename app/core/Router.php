@@ -12,7 +12,7 @@ class Router {
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         
         // Remove base path if exists (e.g. /websip/public)
-        $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+        $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
         if ($scriptName !== '/' && strpos($path, $scriptName) === 0) {
             $path = substr($path, strlen($scriptName));
         }
