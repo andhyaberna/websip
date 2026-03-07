@@ -159,6 +159,38 @@
             document.getElementById('deleteForm').submit();
         }
     }
+
+    // Form Validation
+    document.querySelector('form[action$="/edit"]').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+
+        const title = document.getElementById('title').value.trim();
+        if (!title) {
+            isValid = false;
+            errorMessage += '- Form Title is required.\n';
+        }
+
+        const slug = document.getElementById('slug').value.trim();
+        if (!slug) {
+            isValid = false;
+            errorMessage += '- Slug is required.\n';
+        } else if (!/^[a-z0-9-]+$/.test(slug)) {
+            isValid = false;
+            errorMessage += '- Slug must contain only lowercase letters, numbers, and hyphens.\n';
+        }
+
+        const products = document.querySelectorAll('input[name="products[]"]:checked');
+        if (products.length === 0) {
+            isValid = false;
+            errorMessage += '- At least one Product/Bonus must be assigned.\n';
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n\n' + errorMessage);
+        }
+    });
 </script>
 
 <?php $content = ob_get_clean(); ?>

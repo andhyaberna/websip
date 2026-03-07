@@ -40,7 +40,9 @@ class Auth {
 
     public static function login($user) {
         self::start_session();
-        session_regenerate_id(true); // Prevent Session Fixation
+        if (!headers_sent()) {
+            session_regenerate_id(true); // Prevent Session Fixation
+        }
         $_SESSION['user'] = [
             'id' => $user['id'],
             'name' => $user['name'],

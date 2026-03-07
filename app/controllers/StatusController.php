@@ -34,12 +34,25 @@ class StatusController {
             $dbStatus = false;
             $dbMessage = "Koneksi Database Gagal: " . $e->getMessage();
         } catch (Exception $e) {
-            // DB::getInstance() might die() or throw error depending on implementation
-            // But if it dies, this catch block won't be reached unless I change DB.php
-            // Assuming DB.php has been updated to throw exception or I can't catch it.
-            // My previous update to DB.php still has die(). I should change it to throw exception if I want to catch it here.
             $dbStatus = false;
             $dbMessage = "Error: " . $e->getMessage();
+        }
+
+        // Check for JSON request or if connection failed for monitoring
+        if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
+            header('Content-Type: application/json');
+            http_response_code($dbStatus ? 200 : 500);
+            echo json_encode([
+                'status' => $dbStatus ? 'OK' : 'ERROR',
+                'message' => $dbMessage,
+                'data' => $counts,
+                'timestamp' => date('c')
+            ]);
+            
+            if (!defined('TESTING')) {
+                exit;
+            }
+            return;
         }
 
         view('status', [

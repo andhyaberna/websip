@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../app/controllers/AdminUserController.php';
 require_once __DIR__ . '/../../app/models/AuditLog.php';
 require_once __DIR__ . '/../../app/core/DB.php';
+require_once __DIR__ . '/../../app/core/functions.php';
 
 class AdminUserTest {
     private $db;
@@ -11,26 +12,32 @@ class AdminUserTest {
     private $formId;
 
     public function setUp() {
-        $this->db = DB::getInstance();
-        $this->controller = new AdminUserController();
+        if (session_status() == PHP_SESSION_NONE) session_start();
         
-        // Ensure Admin Auth
+        // Mock REQUEST_URI to avoid warnings in layout
+        $_SERVER['REQUEST_URI'] = '/admin/users';
+        
+        $this->db = DB::getInstance();
+        
+        // Ensure Admin Auth BEFORE controller instantiation
         $_SESSION['user'] = ['id' => 1, 'role' => 'admin', 'email' => 'admin@example.com'];
+        
+        $this->controller = new AdminUserController();
         
         // Clean up previous test data
         $this->db->exec("DELETE FROM users WHERE email = 'testuser99@example.com'");
-        $this->db->exec("DELETE FROM forms WHERE title = 'Test Form User'");
+        $this->db->exec("DELETE FROM access_forms WHERE title = 'Test Form User'");
         
         // Create Test User
         $this->db->exec("INSERT INTO users (name, email, phone, role, status) VALUES ('Test User', 'testuser99@example.com', '08123456789', 'member', 'active')");
         $this->userId = $this->db->lastInsertId();
         
         // Create Test Form
-        $this->db->exec("INSERT INTO forms (title, slug, description, price) VALUES ('Test Form User', 'test-form-user', 'Desc', 10000)");
+        $this->db->exec("INSERT INTO access_forms (title, slug, description) VALUES ('Test Form User', 'test-form-user', 'Desc')");
         $this->formId = $this->db->lastInsertId();
         
         // Register User to Form
-        $this->db->exec("INSERT INTO form_registrations (form_id, user_id, status) VALUES ({$this->formId}, {$this->userId}, 'paid')");
+        $this->db->exec("INSERT INTO form_registrations (form_id, user_id) VALUES ({$this->formId}, {$this->userId})");
     }
 
     public function testIndex() {

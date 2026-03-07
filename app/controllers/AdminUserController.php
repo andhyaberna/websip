@@ -26,8 +26,10 @@ class AdminUserController {
         $params = [];
         
         if (!empty($search)) {
-            $where[] = "(email LIKE :search OR phone LIKE :search OR name LIKE :search)";
-            $params[':search'] = "%$search%";
+            $where[] = "(email LIKE :search1 OR phone LIKE :search2 OR name LIKE :search3)";
+            $params[':search1'] = "%$search%";
+            $params[':search2'] = "%$search%";
+            $params[':search3'] = "%$search%";
         }
         
         if ($status !== 'all' && in_array($status, ['active', 'blocked'])) {
@@ -78,7 +80,7 @@ class AdminUserController {
         $db = DB::getInstance();
         
         // Validate Form
-        $stmt = $db->prepare("SELECT title FROM forms WHERE id = :id");
+        $stmt = $db->prepare("SELECT title FROM access_forms WHERE id = :id");
         $stmt->execute([':id' => $formId]);
         $form = $stmt->fetch();
         
@@ -348,9 +350,13 @@ class AdminUserController {
     }
 
     protected function jsonResponse($data, $code = 200) {
-        http_response_code($code);
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            http_response_code($code);
+            header('Content-Type: application/json');
+        }
         echo json_encode($data);
-        exit;
+        if (!defined('TESTING')) {
+            exit;
+        }
     }
 }

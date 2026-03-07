@@ -188,6 +188,48 @@ if (isset($_SESSION['old'])) unset($_SESSION['old']);
     document.addEventListener('DOMContentLoaded', function() {
         toggleContentMode();
     });
+
+    // Form Validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+
+        const title = document.getElementById('title').value.trim();
+        if (!title) {
+            isValid = false;
+            errorMessage += '- Title is required.\n';
+        }
+
+        const mode = document.getElementById('content_mode').value;
+        if (mode === 'links') {
+            const linkRows = document.querySelectorAll('.link-row');
+            let hasValidLink = false;
+            
+            linkRows.forEach(row => {
+                const label = row.querySelector('input[name*="[label]"]').value.trim();
+                const url = row.querySelector('input[name*="[url]"]').value.trim();
+                if (label && url) {
+                    hasValidLink = true;
+                }
+            });
+
+            if (!hasValidLink) {
+                isValid = false;
+                errorMessage += '- At least one valid link (Label & URL) is required.\n';
+            }
+        } else if (mode === 'html') {
+            const htmlContent = document.getElementById('html_content').value.trim();
+            if (!htmlContent) {
+                isValid = false;
+                errorMessage += '- HTML content cannot be empty.\n';
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n\n' + errorMessage);
+        }
+    });
 </script>
 
 <?php $content = ob_get_clean(); ?>

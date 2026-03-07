@@ -125,7 +125,9 @@ class DashboardController {
         $product = $stmt->fetch();
 
         if (!$product) {
-            http_response_code(403);
+            if (!headers_sent()) {
+                http_response_code(403);
+            }
             view('errors/403', ['message' => 'Anda tidak memiliki akses ke produk ini.']);
             return;
         }

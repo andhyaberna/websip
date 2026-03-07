@@ -7,7 +7,7 @@
     </a>
 </div>
 
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="bg-white rounded-lg shadow overflow-hidden hidden md:block">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
@@ -21,7 +21,12 @@
         <tbody class="bg-white divide-y divide-gray-200">
             <?php if (empty($products)): ?>
                 <tr>
-                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No products found.</td>
+                    <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        <p class="text-lg font-medium">No products found.</p>
+                        <p class="text-sm text-gray-500 mb-4">Get started by creating a new product.</p>
+                        <a href="<?php echo base_url('admin/products/create'); ?>" class="text-indigo-600 hover:text-indigo-900 font-medium">Create Product &rarr;</a>
+                    </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($products as $product): ?>
@@ -52,6 +57,44 @@
             <?php endif; ?>
         </tbody>
     </table>
+</div>
+
+<!-- Mobile Cards -->
+<div class="md:hidden space-y-4">
+    <?php if (empty($products)): ?>
+        <div class="bg-white p-6 rounded-lg shadow text-center">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <p class="text-lg font-medium">No products found.</p>
+            <p class="text-sm text-gray-500 mb-4">Get started by creating a new product.</p>
+            <a href="<?php echo base_url('admin/products/create'); ?>" class="text-indigo-600 hover:text-indigo-900 font-medium">Create Product &rarr;</a>
+        </div>
+    <?php else: ?>
+        <?php foreach ($products as $product): ?>
+            <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900"><?php echo htmlspecialchars($product['title']); ?></h3>
+                        <p class="text-sm text-gray-500"><?php echo date('d M Y', strtotime($product['created_at'])); ?></p>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $product['type'] === 'bonus' ? 'bg-green-100 text-green-800' : 'bg-indigo-100 text-indigo-800'; ?>">
+                        <?php echo ucfirst($product['type']); ?>
+                    </span>
+                </div>
+                
+                <div class="text-sm text-gray-600">
+                    <span class="font-medium">Mode:</span> <?php echo ucfirst($product['content_mode']); ?>
+                </div>
+                
+                <div class="flex justify-end space-x-4 pt-2 border-t border-gray-100">
+                    <a href="<?php echo base_url('admin/products/' . $product['id'] . '/edit'); ?>" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</a>
+                    <form action="<?php echo base_url('admin/products/' . $product['id'] . '/delete'); ?>" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                        <input type="hidden" name="csrf_token" value="<?php echo Auth::csrf_token(); ?>">
+                        <button type="submit" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
+                    </form>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <!-- Pagination -->

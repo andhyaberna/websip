@@ -54,8 +54,8 @@
     </div>
     <?php endif; ?>
 
-<!-- Users Table -->
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<!-- Users Table (Desktop) -->
+<div class="hidden md:block bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -71,7 +71,13 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php if (empty($users)): ?>
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada user ditemukan.</td>
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                <p class="text-lg font-medium">Tidak ada user ditemukan.</p>
+                                <p class="text-sm text-gray-400">Coba ubah filter pencarian Anda.</p>
+                            </div>
+                        </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($users as $user): ?>
@@ -110,6 +116,56 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Users Cards (Mobile) -->
+<div class="md:hidden space-y-4">
+    <?php if (empty($users)): ?>
+        <div class="bg-white p-6 rounded-lg shadow text-center">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <p class="text-lg font-medium text-gray-900">Tidak ada user ditemukan.</p>
+            <p class="text-sm text-gray-500">Coba ubah filter pencarian Anda.</p>
+        </div>
+    <?php else: ?>
+        <?php foreach ($users as $user): ?>
+            <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-lg font-bold text-gray-900"><?php echo htmlspecialchars($user['name']); ?></div>
+                        <div class="text-sm text-gray-500"><?php echo $user['role'] === 'admin' ? '<span class="text-indigo-600 font-bold">Admin</span>' : 'Member'; ?></div>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $user['status'] === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                        <?php echo ucfirst($user['status']); ?>
+                    </span>
+                </div>
+                
+                <div class="text-sm text-gray-700">
+                    <div class="flex items-center mt-1">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <?php echo htmlspecialchars($user['email']); ?>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <?php echo htmlspecialchars($user['phone']); ?>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Joined: <?php echo $user['form_count']; ?> Forms
+                    </div>
+                </div>
+
+                <?php if ($user['role'] !== 'admin'): ?>
+                    <div class="flex justify-end space-x-3 pt-3 border-t">
+                        <button onclick="toggleStatus(<?php echo $user['id']; ?>)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                            <?php echo $user['status'] === 'active' ? 'Block' : 'Activate'; ?>
+                        </button>
+                        <button onclick="resetPassword(<?php echo $user['id']; ?>)" class="text-yellow-600 hover:text-yellow-800 text-sm font-medium">Reset</button>
+                        <button onclick="deleteUser(<?php echo $user['id']; ?>)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <!-- Pagination -->
