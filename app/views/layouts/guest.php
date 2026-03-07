@@ -6,6 +6,13 @@
     <title><?php echo $app_config['app_name'] ?? 'Websip'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<?php
+// Ensure base_url is defined
+if (!isset($base_url)) {
+    $config = require __DIR__ . '/../../config/app.php';
+    $base_url = $config['base_url'];
+}
+?>
 <body class="bg-gray-100 font-sans antialiased">
 
     <!-- Navbar -->
