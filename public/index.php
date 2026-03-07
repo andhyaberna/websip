@@ -17,6 +17,7 @@ require_once __DIR__ . '/../app/controllers/StatusController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/AdminProductController.php';
+require_once __DIR__ . '/../app/controllers/AdminUserController.php';
 // require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
 require_once __DIR__ . '/../app/controllers/DashboardController.php';
@@ -53,6 +54,12 @@ $router->register('POST', '/admin/forms/create', 'AdminController@storeForm');
 $router->register('GET', '/admin/forms/{id}/edit', 'AdminController@editForm');
 $router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm');
 $router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
+$router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
+
+// Admin Users
+$router->register('GET', '/admin/users', 'AdminUserController@index');
+$router->register('POST', '/admin/users/{id}/status', 'AdminUserController@toggleStatus');
+$router->register('POST', '/admin/users/{id}/delete', 'AdminUserController@delete');
 
 // User Dashboard Routes
 $router->register('GET', '/user/dashboard', 'DashboardController@index'); // Keep for backward compat
