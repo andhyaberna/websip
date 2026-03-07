@@ -67,6 +67,7 @@ $router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUse
 
 // Admin Integration Test
 $router->register('POST', '/admin/integrations/test-email', 'AdminController@testEmail');
+$router->register('POST', '/admin/integrations/test-wa', 'AdminController@testWa');
 
 // Admin Users
 $router->register('GET', '/admin/users', 'AdminUserController@index');

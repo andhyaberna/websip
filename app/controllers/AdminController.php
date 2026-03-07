@@ -37,6 +37,31 @@ class AdminController {
 
     // --- Integration Tests ---
     
+    public function testWa() {
+        if (!$this->isAjax()) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Request']);
+            exit;
+        }
+
+        $phone = trim($_POST['phone'] ?? '');
+        $message = trim($_POST['message'] ?? '');
+        
+        if (empty($phone) || empty($message)) {
+            echo json_encode(['status' => 'error', 'message' => 'Phone and Message required', 'badge' => 'danger']);
+            exit;
+        }
+
+        $result = Notifier::sendWaViaStarsender($phone, $message);
+        
+        if ($result['success']) {
+            echo json_encode(['status' => 'success', 'message' => 'WA Sent', 'badge' => 'success', 'raw' => $result['raw']]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $result['message'], 'badge' => 'danger', 'raw' => $result['raw']]);
+        }
+        exit;
+    }
+
     public function testEmail() {
         if (!$this->isAjax()) {
             http_response_code(400);

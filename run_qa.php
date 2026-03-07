@@ -8,6 +8,7 @@ $tests = [
     'tests/Feature/JoinFormTest.php',
     'tests/Feature/AdminResetPasswordTest.php',
     'tests/Feature/DashboardTest.php',
+    'tests/Unit/NotifierTest.php',
 ];
 
 echo "========================================\n";

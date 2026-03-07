@@ -160,6 +160,19 @@ class JoinFormController {
                 // Notifier::log(...) is already called inside sendEmailViaMailketing for failures
             }
 
+            // Send Welcome WA (Starsender)
+            try {
+                if (Settings::get('starsender_enabled')) {
+                    $appName = Settings::get('app_name', 'Websip');
+                    $loginUrl = base_url('login');
+                    $waMessage = "Halo {$user['name']}, akun kamu sudah aktif di {$appName}. Silakan login: {$loginUrl}";
+                    
+                    Notifier::sendWaViaStarsender($user['phone'], $waMessage);
+                }
+            } catch (Exception $e) {
+                // Log error but do not stop flow
+            }
+
             // Redirect to User Dashboard
             $this->redirect(base_url('user/dashboard'));
 

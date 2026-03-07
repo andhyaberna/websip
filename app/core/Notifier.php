@@ -114,6 +114,173 @@ class Notifier {
     }
 
     /**
+     * Send WA via Starsender API
+     * 
+     * @param string $toPhone
+     * @param string $message
+     * @param array $options ['delay' => int, 'schedule' => timestamp, 'file' => url]
+     * @return array ['success' => bool, 'message' => string, 'raw' => string]
+     */
+    public static function sendWaViaStarsender($toPhone, $message, $options = []) {
+        // 1. Validasi Awal
+        $enabled = Settings::get('starsender_enabled');
+        if (!$enabled) {
+            return ['success' => false, 'message' => 'Starsender not enabled', 'raw' => ''];
+        }
+
+        $apiKey = Settings::get('starsender_api_key');
+        if (empty($apiKey)) {
+            return ['success' => false, 'message' => 'API Key Starsender kosong', 'raw' => ''];
+        }
+
+        if (empty($toPhone)) {
+            return ['success' => false, 'message' => 'Nomor tujuan kosong', 'raw' => ''];
+        }
+
+        // 2. Normalisasi Nomor
+        $normalizedPhone = self::normalizePhone($toPhone);
+        if (!$normalizedPhone) {
+            return ['success' => false, 'message' => 'Nomor telepon tidak valid', 'raw' => ''];
+        }
+
+        // 3. Payload Builder
+        $messageType = 'text';
+        $file = $options['file'] ?? null;
+        
+        if ($file) {
+            $messageType = 'media';
+        }
+        
+        $payload = [
+            'messageType' => $messageType,
+            'to' => $normalizedPhone,
+            'body' => $message
+        ];
+
+        if ($file) {
+            $payload['file'] = $file;
+        }
+
+        // Delay & Schedule Logic
+        $delay = $options['delay'] ?? Settings::get('starsender_default_delay', 0);
+        $schedule = $options['schedule'] ?? null;
+
+        if ($schedule) {
+            // Schedule validation: must be > now + 60s
+            // Assuming caller handles validation or API will reject
+            $payload['schedule'] = $schedule;
+        } elseif ($delay > 0) {
+            $payload['delay'] = (int)$delay;
+        }
+
+        // 4. HTTP Request
+        $url = 'https://api.starsender.online/api/send';
+        $maxRetries = 3;
+        $attempt = 0;
+        $response = false;
+        $error = '';
+
+        while ($attempt < $maxRetries) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: ' . $apiKey
+            ]);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            
+            if ($response !== false) {
+                // Check for 5xx errors to retry
+                if ($httpCode >= 500) {
+                    $error = "HTTP $httpCode";
+                    // continue to retry
+                } elseif ($httpCode >= 400 && $httpCode < 500) {
+                    // 4xx errors, do not retry
+                    curl_close($ch);
+                    break;
+                } else {
+                    // Success-ish (2xx, 3xx)
+                    curl_close($ch);
+                    break;
+                }
+            } else {
+                $error = curl_error($ch);
+            }
+            
+            curl_close($ch);
+            $attempt++;
+            
+            if ($attempt < $maxRetries) {
+                sleep(1); // Wait 1s before retry
+            }
+        }
+
+        if ($response === false) {
+            self::log($toPhone, 'wa', $message, 'failed', "Curl Error: $error");
+            return ['success' => false, 'message' => "Curl Error: $error", 'raw' => ''];
+        }
+
+        // 5. Parse Response
+        $responseArr = json_decode($response, true);
+        $success = false;
+        $returnMessage = 'Unknown response';
+        
+        if (isset($responseArr['success']) && $responseArr['success'] === true) {
+            $success = true;
+            $returnMessage = $responseArr['message'] ?? 'Success sent message';
+        } else {
+            $returnMessage = $responseArr['message'] ?? 'Unknown error from Starsender';
+        }
+
+        // 6. Logging
+        // Mask API Key in logs if it appears? Response usually doesn't contain it.
+        // Limit raw response length
+        $logResponse = substr($response, 0, 300);
+        self::log($toPhone, 'wa', $message, $success ? 'sent' : 'failed', $logResponse);
+
+        return [
+            'success' => $success,
+            'message' => $returnMessage,
+            'raw' => $response
+        ];
+    }
+
+    /**
+     * Normalize Phone Number
+     * 
+     * @param string $phone
+     * @return string|false
+     */
+    private static function normalizePhone($phone) {
+        $phone = trim($phone);
+        // Remove non-numeric except +
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+        
+        // Remove + if exists
+        if (strpos($phone, '+') === 0) {
+            $phone = substr($phone, 1);
+        }
+        
+        // Replace leading 0 with 62
+        if (strpos($phone, '0') === 0) {
+            $phone = '62' . substr($phone, 1);
+        }
+        
+        // Ensure numeric and min 10 digits
+        if (!ctype_digit($phone) || strlen($phone) < 10) {
+            return false;
+        }
+        
+        return $phone;
+    }
+
+    /**
      * Send Email using native mail()
 
      * 
