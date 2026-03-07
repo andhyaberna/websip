@@ -16,10 +16,13 @@ $base_url = $app_config['base_url'];
     <!-- Topbar -->
     <nav class="bg-white shadow-sm border-b">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="<?php echo $base_url; ?>/dashboard" class="text-xl font-bold text-indigo-600">
+            <a href="<?php echo $base_url; ?>/app" class="text-xl font-bold text-indigo-600">
                 <?php echo $app_config['app_name']; ?>
             </a>
             <div class="flex items-center space-x-4">
+                <a href="<?php echo $base_url; ?>/app/products" class="text-gray-600 hover:text-indigo-600 text-sm font-medium">Produk</a>
+                <a href="<?php echo $base_url; ?>/app/bonus" class="text-gray-600 hover:text-green-600 text-sm font-medium">Bonus</a>
+                <span class="text-gray-400">|</span>
                 <span class="text-gray-600">Halo, <?php echo $_SESSION['user']['name'] ?? 'Member'; ?></span>
                 <a href="<?php echo $base_url; ?>/logout" class="text-red-600 hover:text-red-800 text-sm font-medium">Logout</a>
             </div>

@@ -18,6 +18,7 @@ require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
+require_once __DIR__ . '/../app/controllers/DashboardController.php';
 
 $router = new Router();
 
@@ -35,8 +36,12 @@ $router->register('GET', '/logout', 'AuthController@logout'); // For convenience
 
 // Protected Routes
 $router->register('GET', '/admin/dashboard', 'AdminController@index');
-$router->register('GET', '/user/dashboard', 'UserController@index');
-$router->register('GET', '/dashboard', 'UserController@index'); // Alias for convenience
+$router->register('GET', '/user/dashboard', 'DashboardController@index'); // Keep for backward compat
+$router->register('GET', '/dashboard', 'DashboardController@index'); // Alias
+$router->register('GET', '/app', 'DashboardController@index');
+$router->register('GET', '/app/products', 'DashboardController@products');
+$router->register('GET', '/app/bonus', 'DashboardController@bonuses');
+$router->register('GET', '/app/item/{id}', 'DashboardController@item');
 
 // Dispatch
 $router->dispatch();
