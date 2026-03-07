@@ -1,65 +1,80 @@
 <?php ob_start(); ?>
 
-<div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-    <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-        <div class="mb-4 text-center">
-             <h2 class="text-2xl font-bold text-gray-900"><?php echo htmlspecialchars($form['title']); ?></h2>
-             <?php if(!empty($form['description'])): ?>
-                <p class="mt-2 text-sm text-gray-600"><?php echo htmlspecialchars($form['description']); ?></p>
-             <?php endif; ?>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <?php echo htmlspecialchars($form['title']); ?>
+            </h2>
+            <?php if (!empty($form['description'])): ?>
+                <div class="mt-2 text-center text-sm text-gray-600 prose">
+                    <?php echo nl2br(htmlspecialchars($form['description'])); ?>
+                </div>
+            <?php endif; ?>
         </div>
+        
+        <?php if (!empty($errors)): ?>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <?php foreach ($errors as $error): ?>
+                                    <li><?php echo htmlspecialchars($error); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
 
-        <form method="POST" action="<?php echo base_url('join/' . $form['slug']); ?>">
+        <form class="mt-8 space-y-6" action="" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
             
-            <!-- Name -->
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="name" class="sr-only">Full Name</label>
+                    <input id="name" name="name" type="text" required class="appearance-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Full Name" value="<?php echo htmlspecialchars($old['name'] ?? ''); ?>">
+                </div>
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email address" value="<?php echo htmlspecialchars($old['email'] ?? ''); ?>">
+                </div>
+                <div>
+                    <label for="phone" class="sr-only">Phone Number (WhatsApp)</label>
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" required class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Phone Number (WhatsApp)" value="<?php echo htmlspecialchars($old['phone'] ?? ''); ?>">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="new-password" required class="appearance-none rounded-b-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password (min. 6 chars)">
+                </div>
+            </div>
+
             <div>
-                <label for="name" class="block font-medium text-sm text-gray-700">Nama Lengkap</label>
-                <input id="name" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border" type="text" name="name" value="<?php echo isset($_SESSION['old_input']['name']) ? htmlspecialchars($_SESSION['old_input']['name']) : ''; ?>" required autofocus />
-            </div>
-
-            <!-- Email -->
-            <div class="mt-4">
-                <label for="email" class="block font-medium text-sm text-gray-700">Email</label>
-                <input id="email" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border" type="email" name="email" value="<?php echo isset($_SESSION['old_input']['email']) ? htmlspecialchars($_SESSION['old_input']['email']) : ''; ?>" required />
-            </div>
-
-            <!-- Phone -->
-            <div class="mt-4">
-                <label for="phone" class="block font-medium text-sm text-gray-700">Nomor WhatsApp / HP</label>
-                <input id="phone" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border" type="tel" name="phone" value="<?php echo isset($_SESSION['old_input']['phone']) ? htmlspecialchars($_SESSION['old_input']['phone']) : ''; ?>" required />
-            </div>
-
-            <!-- Password -->
-            <div class="mt-4">
-                <label for="password" class="block font-medium text-sm text-gray-700">Password</label>
-                <input id="password" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border" type="password" name="password" required autocomplete="new-password" />
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="mt-4">
-                <label for="password_confirmation" class="block font-medium text-sm text-gray-700">Konfirmasi Password</label>
-                <input id="password_confirmation" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border" type="password" name="password_confirmation" required />
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <a class="underline text-sm text-gray-600 hover:text-gray-900" href="<?php echo base_url('login'); ?>">
-                    Sudah punya akun? Login
-                </a>
-
-                <button type="submit" class="ml-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150">
-                    Daftar Sekarang
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Join Now
                 </button>
+            </div>
+            
+            <div class="text-center text-sm text-gray-600">
+                Already have an account? <a href="<?php echo base_url('login'); ?>" class="font-medium text-indigo-600 hover:text-indigo-500">Log in</a>
             </div>
         </form>
     </div>
 </div>
 
-<?php 
-// Clear old input after use
-if(isset($_SESSION['old_input'])) unset($_SESSION['old_input']); 
-?>
-
 <?php $content = ob_get_clean(); ?>
 
-<?php include __DIR__ . '/../../layouts/guest.php'; ?>
+<?php include __DIR__ . '/../layouts/guest.php'; ?>

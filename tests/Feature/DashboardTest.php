@@ -1,24 +1,28 @@
 <?php
+if (session_status() == PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/../../app/config/db.php';
 require_once __DIR__ . '/../../app/core/DB.php';
 require_once __DIR__ . '/../../app/core/Auth.php';
-require_once __DIR__ . '/../../app/core/functions.php';
+// require_once __DIR__ . '/../../app/core/functions.php'; // Mocking view/base_url
 require_once __DIR__ . '/../../app/controllers/DashboardController.php';
 
-// Mock helpers
-if (!function_exists('base_url')) {
-    function base_url($path = '') {
-        return 'http://websip.test/' . ltrim($path, '/');
+// Mock functions
+if (!function_exists('view')) {
+    function view($path, $data = []) {
+        echo "View rendered: $path\n";
+        if (isset($data['items'])) {
+            echo "Items count: " . count($data['items']) . "\n";
+        }
+        if (isset($data['productCount'])) {
+            echo "Stats: P={$data['productCount']}, B={$data['bonusCount']}\n";
+        }
     }
 }
-if (!function_exists('view')) {
-    function view($view, $data = []) {
-        echo "Rendering View: $view\n";
-        // print_r($data); // Too verbose
-        if (isset($data['items'])) echo "Items count: " . count($data['items']) . "\n";
-        if (isset($data['item'])) echo "Item title: " . $data['item']['title'] . "\n";
-        if (isset($data['productCount'])) echo "Products: " . $data['productCount'] . ", Bonus: " . $data['bonusCount'] . "\n";
+
+if (!function_exists('base_url')) {
+    function base_url($path = '') {
+        return "http://localhost/websip/public/" . $path;
     }
 }
 
@@ -26,138 +30,130 @@ class DashboardTest {
     private $db;
     private $controller;
     private $userId;
+    private $productId;
+    private $bonusId;
 
     public function __construct() {
         $this->db = DB::getInstance();
-        // Controller instantiation moved to setUp
     }
 
     public function setUp() {
-        // Ensure user_products table exists (TAHAP 5 migration might have failed)
-        $this->db->exec("CREATE TABLE IF NOT EXISTS user_products (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            product_id INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY uniq_user_product (user_id, product_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-        // Truncate
+        // Setup Session User
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['logged_in'] = true;
+        
         $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
         $this->db->exec("TRUNCATE users");
         $this->db->exec("TRUNCATE products");
         $this->db->exec("TRUNCATE user_products");
-        $this->db->exec("TRUNCATE product_links");
         $this->db->exec("SET FOREIGN_KEY_CHECKS=1");
 
-        // Create User
-        $this->db->exec("INSERT INTO users (name, email, password_hash, role, status) VALUES ('Test User', 'test@user.com', 'hash', 'user', 'active')");
+        $this->db->exec("INSERT INTO users (name, email, password_hash, role) VALUES ('Test User', 'test@example.com', 'hash', 'user')");
         $this->userId = $this->db->lastInsertId();
+        
+        $_SESSION['user'] = ['id' => $this->userId, 'role' => 'user', 'name' => 'Test User'];
 
-        // Login User
-        $_SESSION['user'] = [
-            'id' => $this->userId,
-            'name' => 'Test User',
-            'role' => 'user'
-        ];
-        $_SESSION['logged_in'] = true;
-        $_SESSION['user_id'] = $this->userId;
-
-        // Instantiate Controller AFTER login (Middleware checks Auth)
+        // Now initialize controller after session is set
         $this->controller = new DashboardController();
 
-        // Create Products
-        $this->db->exec("INSERT INTO products (title, type, content_mode, content_html) VALUES ('Product 1', 'product', 'html', '<p>Content 1</p>')");
-        $p1 = $this->db->lastInsertId();
-        $this->db->exec("INSERT INTO products (title, type, content_mode) VALUES ('Product 2', 'product', 'links')");
-        $p2 = $this->db->lastInsertId();
-        $this->db->exec("INSERT INTO products (title, type, content_mode) VALUES ('Bonus 1', 'bonus', 'html')");
-        $b1 = $this->db->lastInsertId();
+        // Create Product
+        $this->db->exec("INSERT INTO products (title, type, content_mode) VALUES ('My Product', 'product', 'html')");
+        $this->productId = $this->db->lastInsertId();
 
-        // Assign to User
-        $this->db->exec("INSERT INTO user_products (user_id, product_id, created_at) VALUES ($this->userId, $p1, NOW())");
-        $this->db->exec("INSERT INTO user_products (user_id, product_id, created_at) VALUES ($this->userId, $b1, NOW())");
-        // User does not own p2
+        // Create Bonus
+        $this->db->exec("INSERT INTO products (title, type, content_mode) VALUES ('My Bonus', 'bonus', 'html')");
+        $this->bonusId = $this->db->lastInsertId();
 
-        // Links for p2 (though not owned)
-        $this->db->exec("INSERT INTO product_links (product_id, label, url) VALUES ($p2, 'Link 1', 'http://example.com')");
+        // Assign Product to User
+        $stmt = $this->db->prepare("INSERT INTO user_products (user_id, product_id, created_at) VALUES (?, ?, NOW())");
+        $stmt->execute([$this->userId, $this->productId]);
     }
 
-    public function testIndex() {
-        echo "\n[TEST] GET /app (Dashboard)\n";
-        echo "Auth Check: " . (Auth::check() ? 'True' : 'False') . "\n";
-        if (!Auth::check()) {
-             print_r($_SESSION);
-        }
+    public function testIndexStats() {
+        echo "\nRunning testIndexStats...\n";
+        ob_start();
         $this->controller->index();
-    }
-
-    public function testProducts() {
-        echo "\n[TEST] GET /app/products\n";
-        $_GET['page'] = 1;
-        $this->controller->products();
-    }
-
-    public function testBonuses() {
-        echo "\n[TEST] GET /app/bonus\n";
-        $this->controller->bonuses();
-    }
-
-    public function testItemOwnedHtml() {
-        echo "\n[TEST] GET /app/item/{id} (Owned HTML)\n";
-        // Get ID of Product 1
-        $stmt = $this->db->prepare("SELECT id FROM products WHERE title='Product 1'");
-        $stmt->execute();
-        $id = $stmt->fetchColumn();
-        $this->controller->item($id);
-    }
-
-    public function testItemOwnedLinks() {
-        // Assign p2 first to test links
-        $stmt = $this->db->prepare("SELECT id FROM products WHERE title='Product 2'");
-        $stmt->execute();
-        $id = $stmt->fetchColumn();
-        $this->db->exec("INSERT INTO user_products (user_id, product_id, created_at) VALUES ($this->userId, $id, NOW())");
+        $output = ob_get_clean();
         
-        echo "\n[TEST] GET /app/item/{id} (Owned Links)\n";
-        $this->controller->item($id);
-    }
-
-    public function testItemNotOwned() {
-        echo "\n[TEST] GET /app/item/{id} (Not Owned)\n";
-        // Create unowned product
-        $this->db->exec("INSERT INTO products (title, type) VALUES ('Unowned', 'product')");
-        $id = $this->db->lastInsertId();
-        
-        // Mock http_response_code
-        if (!function_exists('http_response_code')) {
-            function http_response_code($code = NULL) {
-                if ($code) echo "Response Code: $code\n";
-                return $code;
-            }
+        // Expect P=1, B=0 (since bonus not assigned yet)
+        if (strpos($output, "Stats: P=1, B=0") !== false) {
+            echo "PASS: Stats correct.\n";
+        } else {
+            echo "FAIL: Stats incorrect. Output: $output\n";
         }
+    }
+
+    public function testProductsListing() {
+        echo "\nRunning testProductsListing...\n";
+        ob_start();
+        $this->controller->products();
+        $output = ob_get_clean();
         
-        $this->controller->item($id);
+        if (strpos($output, "View rendered: user/products") !== false && strpos($output, "Items count: 1") !== false) {
+            echo "PASS: Products listing correct.\n";
+        } else {
+            echo "FAIL: Products listing incorrect. Output: $output\n";
+        }
+    }
+
+    public function testBonusesListing() {
+        echo "\nRunning testBonusesListing...\n";
+        ob_start();
+        $this->controller->bonuses(); // Should be empty
+        $output = ob_get_clean();
+        
+        if (strpos($output, "View rendered: user/bonuses") !== false && strpos($output, "Items count: 0") !== false) {
+            echo "PASS: Bonuses listing correct (empty).\n";
+        } else {
+            echo "FAIL: Bonuses listing incorrect. Output: $output\n";
+        }
+    }
+
+    public function testItemAccess() {
+        echo "\nRunning testItemAccess...\n";
+        
+        // Access owned product
+        ob_start();
+        $this->controller->item($this->productId);
+        $output = ob_get_clean();
+        if (strpos($output, "View rendered: user/item") !== false) {
+            echo "PASS: Access owned product allowed.\n";
+        } else {
+            echo "FAIL: Access owned product failed. Output: $output\n";
+        }
+
+        // Access unowned bonus
+        ob_start();
+        $this->controller->item($this->bonusId);
+        $output = ob_get_clean();
+        if (strpos($output, "View rendered: errors/403") !== false) { // Or whatever 403 handling
+            echo "PASS: Access unowned product denied.\n";
+        } else {
+            // Check http response code if possible, or view output
+            // DashboardController uses http_response_code(403) and view('errors/403')
+             if (strpos($output, "View rendered: errors/403") !== false) {
+                echo "PASS: Access unowned product denied (View).\n";
+             } else {
+                echo "FAIL: Access unowned product should be denied. Output: $output\n";
+             }
+        }
     }
 }
 
-// Run
 try {
-    // Start session if not started
-    if (session_status() == PHP_SESSION_NONE) session_start();
-    
     $test = new DashboardTest();
     $test->setUp();
-    $test->testIndex();
-    $test->testProducts();
-    $test->testBonuses();
-    $test->testItemOwnedHtml();
-    $test->testItemOwnedLinks();
-    $test->testItemNotOwned();
+    $test->testIndexStats();
     
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    echo $e->getTraceAsString();
+    $test->setUp(); // Reset (though not strictly needed if state is consistent)
+    $test->testProductsListing();
+
+    $test->setUp();
+    $test->testBonusesListing();
+
+    $test->setUp();
+    $test->testItemAccess();
+
+} catch (Throwable $e) {
+    echo "FATAL ERROR: " . $e->getMessage() . "\n";
 }

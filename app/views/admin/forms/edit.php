@@ -112,13 +112,46 @@
 <script>
     function copyToClipboard() {
         var copyText = document.getElementById("joinLink");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); // For mobile devices
-        navigator.clipboard.writeText(copyText.value).then(function() {
-            alert("Link copied to clipboard: " + copyText.value);
-        }, function(err) {
-            alert("Could not copy link: " + err);
-        });
+        var text = copyText.value;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert("Link copied to clipboard!");
+            }, function(err) {
+                console.error('Async: Could not copy text: ', err);
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            fallbackCopyTextToClipboard(text);
+        }
+    }
+
+    function fallbackCopyTextToClipboard(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // Avoid scrolling to bottom
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            var successful = document.execCommand('copy');
+            if (successful) {
+                alert('Link copied to clipboard!');
+            } else {
+                alert('Fallback: Oops, unable to copy');
+            }
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            alert('Fallback: Oops, unable to copy');
+        }
+
+        document.body.removeChild(textArea);
     }
 
     function confirmDelete() {

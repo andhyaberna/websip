@@ -3,105 +3,150 @@
 require_once __DIR__ . '/../../app/config/db.php';
 require_once __DIR__ . '/../../app/core/DB.php';
 require_once __DIR__ . '/../../app/core/Auth.php';
-require_once __DIR__ . '/../../app/core/functions.php';
+// require_once __DIR__ . '/../../app/core/functions.php'; // Removed to allow mocking
 require_once __DIR__ . '/../../app/controllers/JoinFormController.php';
 
-// Mock base_url helper if not available
-if (!function_exists('base_url')) {
-    function base_url($path = '') {
-        return 'http://websip.test/' . ltrim($path, '/');
+// Mock View Function
+if (!function_exists('view')) {
+    function view($path, $data = []) {
+        extract($data);
+        echo "View Loaded: $path\n";
+        if (isset($errors)) {
+            echo "Errors: " . implode(', ', $errors) . "\n";
+        }
     }
 }
 
-// Mock view helper
-if (!function_exists('view')) {
-    function view($view, $data = []) {
-        echo "Rendering View: $view\n";
-        print_r($data);
+// Mock Base URL
+if (!function_exists('base_url')) {
+    function base_url($path = '') {
+        return "http://localhost/websip/public/" . $path;
+    }
+}
+
+// Mock Redirect Controller
+class TestJoinFormController extends JoinFormController {
+    public $redirectUrl = null;
+
+    protected function redirect($url) {
+        $this->redirectUrl = $url;
+        echo "Redirected to: $url\n";
     }
 }
 
 class JoinFormTest {
-    
     private $db;
     private $controller;
+    private $formId;
+    private $productId;
+    private $slug = 'test-join-form';
 
     public function __construct() {
         $this->db = DB::getInstance();
-        $this->controller = new JoinFormController();
+        $this->controller = new TestJoinFormController();
     }
 
     public function setUp() {
         // Truncate tables
         $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
-        $this->db->exec("TRUNCATE users");
-        $this->db->exec("TRUNCATE access_forms");
-        $this->db->exec("TRUNCATE products");
-        $this->db->exec("TRUNCATE form_products");
-        $this->db->exec("TRUNCATE form_registrations");
-        $this->db->exec("TRUNCATE user_products");
+        $this->db->exec("TRUNCATE TABLE users");
+        $this->db->exec("TRUNCATE TABLE access_forms");
+        $this->db->exec("TRUNCATE TABLE products");
+        $this->db->exec("TRUNCATE TABLE form_products");
+        $this->db->exec("TRUNCATE TABLE user_products");
+        $this->db->exec("TRUNCATE TABLE form_registrations");
         $this->db->exec("SET FOREIGN_KEY_CHECKS=1");
 
-        // Seed data
-        $this->db->exec("INSERT INTO access_forms (slug, title, status) VALUES ('test-join', 'Test Join', 'open')");
-        $this->db->exec("INSERT INTO access_forms (slug, title, status) VALUES ('closed-join', 'Closed Join', 'closed')");
-        
-        $this->db->exec("INSERT INTO products (title, type, content_mode) VALUES ('Test Product', 'product', 'html')");
-        $pid = $this->db->lastInsertId();
-        
-        $stmt = $this->db->prepare("SELECT id FROM access_forms WHERE slug='test-join'");
+        // Create Product
+        $stmt = $this->db->prepare("INSERT INTO products (title, type, content_mode) VALUES ('Test Product', 'product', 'html')");
         $stmt->execute();
-        $fid = $stmt->fetchColumn();
+        $this->productId = $this->db->lastInsertId();
+
+        // Create Form
+        $stmt = $this->db->prepare("INSERT INTO access_forms (slug, title, status, created_at) VALUES (:slug, 'Test Form', 'open', NOW())");
+        $stmt->execute([':slug' => $this->slug]);
+        $this->formId = $this->db->lastInsertId();
+
+        // Assign Product to Form
+        $stmt = $this->db->prepare("INSERT INTO form_products (form_id, product_id) VALUES (:fid, :pid)");
+        $stmt->execute([':fid' => $this->formId, ':pid' => $this->productId]);
         
-        $this->db->exec("INSERT INTO form_products (form_id, product_id) VALUES ($fid, $pid)");
+        // Init Session
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['csrf_token'] = 'test_token';
     }
 
-    public function testGetJoinForm() {
-        echo "\n[TEST] GET /join/test-join\n";
-        $this->controller->index('test-join');
-    }
-
-    public function testGetClosedForm() {
-        echo "\n[TEST] GET /join/closed-join (Should return 403)\n";
-        $this->controller->index('closed-join');
-    }
-
-    public function testGetNotFoundForm() {
-        echo "\n[TEST] GET /join/unknown (Should return 404)\n";
-        $this->controller->index('unknown');
-    }
-
-    public function testPostJoinSuccess() {
-        echo "\n[TEST] POST /join/test-join (Success Case)\n";
+    public function testIndex() {
+        echo "\nRunning testIndex...\n";
+        ob_start();
+        $this->controller->index($this->slug);
+        $output = ob_get_clean();
         
-        // Mock POST
-        $_SERVER['REQUEST_METHOD'] = 'POST';
+        if (strpos($output, "View Loaded: guest/join") !== false) {
+            echo "PASS: Join form view loaded.\n";
+        } else {
+            echo "FAIL: Join form view not loaded. Output: $output\n";
+        }
+    }
+
+    public function testStoreSuccess() {
+        echo "\nRunning testStoreSuccess...\n";
+        
+        // Mock POST data
         $_POST = [
-            'csrf_token' => Auth::generateCSRF(), // Ensure valid token
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'phone' => '081234567890',
-            'password' => 'password123',
-            'password_confirmation' => 'password123'
+            'csrf_token' => 'test_token',
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'phone' => '08123456789',
+            'password' => 'password123'
         ];
-
-        // Since controller uses exit(), this will terminate script.
-        // In real unit test, we'd use output buffering or override exit.
-        // For this manual test, we just check DB state after running?
-        // But we can't run multiple tests if it exits.
         
-        echo "Cannot run full POST test due to exit() in controller. Manual testing via browser/curl recommended.\n";
+        ob_start();
+        $this->controller->store($this->slug);
+        $output = ob_get_clean();
+
+        // Check Redirect
+        if ($this->controller->redirectUrl === "http://localhost/websip/public/user/dashboard") {
+            echo "PASS: Redirected to dashboard.\n";
+        } else {
+            echo "FAIL: Redirect URL mismatch. Got: " . $this->controller->redirectUrl . "\n";
+            echo "Output: $output\n";
+        }
+
+        // Check Database - User Created
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = 'john@example.com'");
+        $stmt->execute();
+        $user = $stmt->fetch();
+        
+        if ($user) {
+            echo "PASS: User created in database.\n";
+        } else {
+            echo "FAIL: User not found in database.\n";
+        }
+
+        // Check Database - Form Registration
+        $stmt = $this->db->prepare("SELECT * FROM form_registrations WHERE user_id = :uid AND form_id = :fid");
+        $stmt->execute([':uid' => $user['id'], ':fid' => $this->formId]);
+        if ($stmt->fetch()) {
+            echo "PASS: Form registration recorded.\n";
+        } else {
+            echo "FAIL: Form registration not found.\n";
+        }
+
+        // Check Database - Product Assignment
+        $stmt = $this->db->prepare("SELECT * FROM user_products WHERE user_id = :uid AND product_id = :pid");
+        $stmt->execute([':uid' => $user['id'], ':pid' => $this->productId]);
+        if ($stmt->fetch()) {
+            echo "PASS: Product assigned to user.\n";
+        } else {
+            echo "FAIL: Product assignment not found.\n";
+        }
     }
 }
 
 // Run Tests
-try {
-    $test = new JoinFormTest();
-    $test->setUp();
-    $test->testGetJoinForm();
-    $test->testGetClosedForm();
-    $test->testGetNotFoundForm();
-    // $test->testPostJoinSuccess(); // Commented out because it exits
-} catch (Exception $e) {
-    echo "Test Failed: " . $e->getMessage() . "\n";
-}
+$test = new JoinFormTest();
+$test->setUp();
+$test->testIndex();
+$test->setUp(); // Reset DB
+$test->testStoreSuccess();

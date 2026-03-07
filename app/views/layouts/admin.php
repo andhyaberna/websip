@@ -21,8 +21,8 @@ $base_url = $app_config['base_url'];
             </div>
             <nav class="flex-1 px-4 py-6 space-y-2">
                 <a href="<?php echo $base_url; ?>/admin/dashboard" class="block px-4 py-2 rounded hover:bg-slate-700 transition">Dashboard</a>
-                <a href="<?php echo $base_url; ?>/admin/users" class="block px-4 py-2 rounded hover:bg-slate-700 transition">Users</a>
-                <a href="<?php echo $base_url; ?>/admin/access" class="block px-4 py-2 rounded hover:bg-slate-700 transition">Access</a>
+                <a href="<?php echo $base_url; ?>/admin/users" class="block px-4 py-2 rounded hover:bg-slate-700 transition opacity-50 cursor-not-allowed" onclick="return false;">Users (Soon)</a>
+                <a href="<?php echo $base_url; ?>/admin/forms" class="block px-4 py-2 rounded hover:bg-slate-700 transition">Access Forms</a>
                 <a href="<?php echo $base_url; ?>/logout" class="block px-4 py-2 rounded text-red-400 hover:bg-slate-700 hover:text-red-300 transition mt-8">Logout</a>
             </nav>
         </aside>

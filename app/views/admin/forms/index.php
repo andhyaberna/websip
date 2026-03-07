@@ -46,6 +46,9 @@
                             <?php echo date('d M Y H:i', strtotime($form['created_at'])); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button onclick="copyToClipboard('<?php echo base_url('join/' . $form['slug']); ?>')" class="text-blue-600 hover:text-blue-900" title="Copy Join Link">
+                                Copy Link
+                            </button>
                             <a href="<?php echo base_url('admin/forms/' . $form['id'] . '/edit'); ?>" class="text-indigo-600 hover:text-indigo-900">Edit</a>
                             
                             <form action="<?php echo base_url('admin/forms/' . $form['id'] . '/delete'); ?>" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this form?');">
@@ -59,6 +62,52 @@
         </tbody>
     </table>
 </div>
+
+<script>
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Navigator clipboard api method'
+        return navigator.clipboard.writeText(text).then(function() {
+            alert('Link copied to clipboard!');
+        }, function(err) {
+            console.error('Async: Could not copy text: ', err);
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        // Text area method
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'successful' : 'unsuccessful';
+        if (successful) {
+            alert('Link copied to clipboard!');
+        } else {
+            alert('Fallback: Oops, unable to copy');
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        alert('Fallback: Oops, unable to copy');
+    }
+
+    document.body.removeChild(textArea);
+}
+</script>
 
 <?php $content = ob_get_clean(); ?>
 

@@ -16,7 +16,7 @@ require_once __DIR__ . '/../app/controllers/HomeController.php';
 require_once __DIR__ . '/../app/controllers/StatusController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
-require_once __DIR__ . '/../app/controllers/UserController.php';
+// require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
 require_once __DIR__ . '/../app/controllers/DashboardController.php';
 

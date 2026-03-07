@@ -13,8 +13,8 @@ require_once __DIR__ . '/../../app/core/DB.php';
 echo "Loaded DB.php\n";
 require_once __DIR__ . '/../../app/core/Auth.php';
 echo "Loaded Auth.php\n";
-require_once __DIR__ . '/../../app/core/functions.php';
-echo "Loaded functions.php\n";
+// require_once __DIR__ . '/../../app/core/functions.php';
+// echo "Loaded functions.php\n";
 require_once __DIR__ . '/../../app/controllers/AdminController.php';
 echo "Loaded AdminController.php\n";
 

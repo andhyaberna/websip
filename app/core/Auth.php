@@ -88,6 +88,10 @@ class Auth {
     }
     
     // CSRF Protection Helpers
+    public static function csrf_token() {
+        return self::generateCSRF();
+    }
+
     public static function generateCSRF() {
         self::start_session();
         if (empty($_SESSION['csrf_token'])) {

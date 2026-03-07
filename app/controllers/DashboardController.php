@@ -150,6 +150,7 @@ class DashboardController {
     }
 
     private function sanitizeHtml($html) {
+        if ($html === null) return '';
         // Basic sanitization: strip dangerous tags
         // Ideally use HTMLPurifier, but here we use strip_tags with allow-list
         $allowed_tags = '<p><br><b><strong><i><em><u><ul><ol><li><h1><h2><h3><h4><h5><h6><blockquote><a><img><div><span><table><thead><tbody><tr><th><td>';
