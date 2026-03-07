@@ -1,47 +1,128 @@
 -- Database: websip
+-- Schema Version: 1.0 (Based on user.sql snapshot)
 
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- --------------------------------------------------------
+-- Table structure for table `users`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
-  `email` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(150) NOT NULL UNIQUE,
   `phone` VARCHAR(20) DEFAULT NULL,
-  `password` VARCHAR(255) NOT NULL,
-  `role` ENUM('admin', 'member') NOT NULL DEFAULT 'member',
-  `status` ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `password_hash` VARCHAR(255) NOT NULL,
+  `status` ENUM('active','blocked') DEFAULT 'active',
+  `role` ENUM('user','admin') DEFAULT 'user',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `last_login` TIMESTAMP NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `access_products` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(100) NOT NULL,
-  `slug` VARCHAR(100) NOT NULL,
-  `description` TEXT,
-  `type` ENUM('product', 'bonus') NOT NULL DEFAULT 'product',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- --------------------------------------------------------
+-- Table structure for table `access_forms`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `access_forms`;
+CREATE TABLE `access_forms` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `slug` VARCHAR(50) NOT NULL UNIQUE,
+  `title` VARCHAR(200) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `status` ENUM('open','closed') DEFAULT 'open',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_access` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `user_id` INT(11) NOT NULL,
-  `product_id` INT(11) NOT NULL,
-  `granted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `product_id` (`product_id`),
-  CONSTRAINT `user_access_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_access_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `access_products` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- --------------------------------------------------------
+-- Table structure for table `products`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `products`;
+CREATE TABLE `products` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `title` VARCHAR(200) NOT NULL,
+  `type` ENUM('product','bonus') NOT NULL,
+  `content_mode` ENUM('links','html') NOT NULL,
+  `content_html` LONGTEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert Default Admin (password: admin123)
-INSERT INTO `users` (`name`, `email`, `phone`, `password`, `role`, `status`) VALUES
-('Super Admin', 'admin@websip.com', '081234567890', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active');
+-- --------------------------------------------------------
+-- Table structure for table `product_links`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `product_links`;
+CREATE TABLE `product_links` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT NOT NULL,
+  `label` VARCHAR(100) NOT NULL,
+  `url` VARCHAR(500) NOT NULL,
+  `sort_order` INT DEFAULT 0,
+  CONSTRAINT `fk_product_links_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert Sample Products
-INSERT INTO `access_products` (`name`, `slug`, `description`, `type`) VALUES
-('Classic Editor', 'classic-editor', 'Akses ke classic editor dengan fitur input link download.', 'product'),
-('Bonus E-Book', 'bonus-ebook', 'Bonus e-book panduan marketing.', 'bonus');
+-- --------------------------------------------------------
+-- Table structure for table `form_products`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `form_products`;
+CREATE TABLE `form_products` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `form_id` INT NOT NULL,
+  `product_id` INT NOT NULL,
+  UNIQUE KEY `uniq_form_product` (`form_id`, `product_id`),
+  CONSTRAINT `fk_form_products_form` FOREIGN KEY (`form_id`) REFERENCES `access_forms` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_form_products_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `form_registrations`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `form_registrations`;
+CREATE TABLE `form_registrations` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `form_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_form_registrations_form` FOREIGN KEY (`form_id`) REFERENCES `access_forms` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_form_registrations_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `notification_logs`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `notification_logs`;
+CREATE TABLE `notification_logs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `channel` ENUM('email','wa') NOT NULL,
+  `status` ENUM('queued','sent','failed') DEFAULT 'queued',
+  `provider_response` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_notification_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `audit_logs`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `audit_logs`;
+CREATE TABLE `audit_logs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `actor_admin_id` INT DEFAULT NULL,
+  `actor_user_id` INT DEFAULT NULL,
+  `action` VARCHAR(100) NOT NULL,
+  `meta_json` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_audit_logs_admin` FOREIGN KEY (`actor_admin_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_audit_logs_user` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Data Seed
+-- --------------------------------------------------------
+
+-- Admin Default
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `status`) VALUES
+('Super Admin', 'admin@websip.test', '$2y$10$J90tqbctCb8Cw.MCwkSisu1aZgpvjPi4p2wrdMLmCWCmrH/0x6V4a', 'admin', 'active');
+
+-- Sample Form
+INSERT INTO `access_forms` (`slug`, `title`, `description`, `status`) VALUES
+('sample', 'Akses Produk Demo', 'Form demo untuk testing.', 'open');
+
+SET FOREIGN_KEY_CHECKS = 1;
