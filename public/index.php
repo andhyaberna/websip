@@ -16,6 +16,7 @@ require_once __DIR__ . '/../app/controllers/HomeController.php';
 require_once __DIR__ . '/../app/controllers/StatusController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
+require_once __DIR__ . '/../app/controllers/AdminProductController.php';
 // require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
 require_once __DIR__ . '/../app/controllers/DashboardController.php';
@@ -37,6 +38,15 @@ $router->register('GET', '/logout', 'AuthController@logout'); // For convenience
 // Admin Routes
 $router->register('GET', '/admin', 'AdminController@index');
 $router->register('GET', '/admin/dashboard', 'AdminController@index'); // Alias
+// Admin Products
+$router->register('GET', '/admin/products', 'AdminProductController@index');
+$router->register('GET', '/admin/products/create', 'AdminProductController@create');
+$router->register('POST', '/admin/products/create', 'AdminProductController@store');
+$router->register('GET', '/admin/products/{id}/edit', 'AdminProductController@edit');
+$router->register('POST', '/admin/products/{id}/edit', 'AdminProductController@update');
+$router->register('POST', '/admin/products/{id}/delete', 'AdminProductController@delete');
+
+// Admin Forms
 $router->register('GET', '/admin/forms', 'AdminController@forms');
 $router->register('GET', '/admin/forms/create', 'AdminController@createForm');
 $router->register('POST', '/admin/forms/create', 'AdminController@storeForm');

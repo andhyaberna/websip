@@ -133,14 +133,25 @@ class DashboardController {
         // Fetch Links if mode is links
         $links = [];
         if ($product['content_mode'] === 'links') {
-            $stmt = $db->prepare("SELECT * FROM product_links WHERE product_id = :pid ORDER BY sort_order ASC");
-            $stmt->execute([':pid' => $id]);
-            $links = $stmt->fetchAll();
+            // TAHAP 8: Support for JSON column
+            if (!empty($product['product_links'])) {
+                $decoded = json_decode($product['product_links'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $links = $decoded;
+                }
+            }
+
+            // Fallback to table if JSON is empty
+            if (empty($links)) {
+                $stmt = $db->prepare("SELECT * FROM product_links WHERE product_id = :pid ORDER BY sort_order ASC");
+                $stmt->execute([':pid' => $id]);
+                $links = $stmt->fetchAll();
+            }
         }
 
         // Sanitize HTML if mode is html
         if ($product['content_mode'] === 'html') {
-            $product['content_html'] = $this->sanitizeHtml($product['content_html']);
+            $product['html_content'] = $this->sanitizeHtml($product['html_content']);
         }
 
         view('user/item', [

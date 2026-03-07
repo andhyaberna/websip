@@ -17,6 +17,11 @@ if (!function_exists('view')) {
         if (isset($data['productCount'])) {
             echo "Stats: P={$data['productCount']}, B={$data['bonusCount']}\n";
         }
+        if (isset($data['item'])) {
+            echo "Item Title: " . $data['item']['title'] . "\n";
+            if (isset($data['item']['html_content'])) echo "Item HTML: " . substr($data['item']['html_content'], 0, 20) . "...\n";
+            if (isset($data['links'])) echo "Item Links Count: " . count($data['links']) . "\n";
+        }
     }
 }
 
@@ -138,6 +143,36 @@ class DashboardTest {
              }
         }
     }
+    public function testItemContent() {
+        echo "\nRunning testItemContent...\n";
+        
+        // 1. Test HTML Content
+        $this->db->exec("UPDATE products SET content_mode = 'html', html_content = '<p>Test Content</p>' WHERE id = " . $this->productId);
+        
+        ob_start();
+        $this->controller->item($this->productId);
+        $output = ob_get_clean();
+        
+        if (strpos($output, "Item HTML: <p>Test Content</p>...") !== false) {
+             echo "PASS: HTML content rendered.\n";
+        } else {
+             echo "FAIL: HTML content missing. Output: $output\n";
+        }
+
+        // 2. Test Links Content (JSON)
+        $linksJson = json_encode([['label' => 'L1', 'url' => 'U1']]);
+        $this->db->exec("UPDATE products SET content_mode = 'links', product_links = '$linksJson' WHERE id = " . $this->productId);
+        
+        ob_start();
+        $this->controller->item($this->productId);
+        $output = ob_get_clean();
+
+        if (strpos($output, "Item Links Count: 1") !== false) {
+             echo "PASS: Links content (JSON) rendered.\n";
+        } else {
+             echo "FAIL: Links content missing. Output: $output\n";
+        }
+    }
 }
 
 try {
@@ -153,6 +188,9 @@ try {
 
     $test->setUp();
     $test->testItemAccess();
+
+    $test->setUp();
+    $test->testItemContent();
 
 } catch (Throwable $e) {
     echo "FATAL ERROR: " . $e->getMessage() . "\n";

@@ -44,7 +44,7 @@ $textClass = $item['type'] === 'bonus' ? 'text-green-600' : 'text-indigo-600';
         <!-- Content Mode: HTML -->
         <?php if ($item['content_mode'] === 'html'): ?>
             <div class="prose max-w-none text-gray-800">
-                <?php echo $item['content_html']; ?>
+                <?php echo $item['html_content']; ?>
             </div>
         
         <!-- Content Mode: Links -->
@@ -65,7 +65,7 @@ $textClass = $item['type'] === 'bonus' ? 'text-green-600' : 'text-indigo-600';
                                 </div>
                                 <div>
                                     <h3 class="font-medium text-gray-900 group-hover:text-indigo-700">
-                                        <?php echo htmlspecialchars($link['title']); ?>
+                                        <?php echo htmlspecialchars($link['label']); ?>
                                     </h3>
                                     <p class="text-sm text-gray-500 truncate max-w-xs">
                                         <?php echo htmlspecialchars($link['url']); ?>
