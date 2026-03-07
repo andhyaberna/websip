@@ -5,7 +5,7 @@ class DB {
     private $pdo;
 
     private function __construct() {
-        $config = require __DIR__ . '/../../config/db.php';
+        $config = require __DIR__ . '/../config/db.php';
         $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['dbname']};charset=utf8mb4";
         
         try {
