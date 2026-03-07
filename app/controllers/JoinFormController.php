@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../core/Notifier.php';
+
 class JoinFormController {
     
     public function index($slug) {
@@ -143,6 +145,20 @@ class JoinFormController {
 
             // Auto Login
             Auth::login($user);
+
+            // Send Welcome Email (Mailketing)
+            try {
+                if (Settings::get('mailketing_enabled')) {
+                    $appName = Settings::get('app_name', 'Websip');
+                    $subject = "Selamat Datang di {$appName}";
+                    $htmlContent = "<h3>Halo, " . htmlspecialchars($user['name']) . "</h3><p>Selamat bergabung di {$appName}.</p>";
+                    
+                    Notifier::sendEmailViaMailketing($user['email'], $subject, $htmlContent);
+                }
+            } catch (Exception $e) {
+                // Log error but do not stop flow
+                // Notifier::log(...) is already called inside sendEmailViaMailketing for failures
+            }
 
             // Redirect to User Dashboard
             $this->redirect(base_url('user/dashboard'));

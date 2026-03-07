@@ -26,6 +26,13 @@ require_once __DIR__ . '/../app/controllers/DashboardController.php';
 
 $router = new Router();
 
+// Ping Route for Health Check
+$router->register('GET', '/_ping', function() {
+    http_response_code(200);
+    echo "OK";
+    exit;
+});
+
 // Public Routes
 $router->register('GET', '/', 'HomeController@index');
 $router->register('GET', '/status', 'StatusController@index');
@@ -58,6 +65,9 @@ $router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm'
 $router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
 $router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
 
+// Admin Integration Test
+$router->register('POST', '/admin/integrations/test-email', 'AdminController@testEmail');
+
 // Admin Users
 $router->register('GET', '/admin/users', 'AdminUserController@index');
 $router->register('POST', '/admin/users/{id}/status', 'AdminUserController@toggleStatus');
@@ -75,4 +85,21 @@ $router->register('GET', '/app/bonus', 'DashboardController@bonuses');
 $router->register('GET', '/app/item/{id}', 'DashboardController@item');
 
 // Dispatch
-$router->dispatch();
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+
+if ($scriptName !== '/' && strpos($requestUri, $scriptName) === 0) {
+    $path = substr($requestUri, strlen($scriptName));
+} else {
+    $path = $requestUri;
+}
+
+if ($path === false || $path === '') {
+    $path = '/';
+}
+
+$router->register('GET', '/_route', function() use ($path) {
+    echo "Path: " . $path;
+});
+
+$router->dispatch($path);

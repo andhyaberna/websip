@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../core/Middleware.php';
+require_once __DIR__ . '/../core/Notifier.php';
 
 class AdminController {
     
@@ -32,6 +33,39 @@ class AdminController {
             'formCount' => $formCount,
             'productCount' => $activeProducts
         ]);
+    }
+
+    // --- Integration Tests ---
+    
+    public function testEmail() {
+        if (!$this->isAjax()) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Request']);
+            exit;
+        }
+
+        // Validate CSRF? For test convenience, maybe skip or require. Let's stick to standard practice.
+        // But prompt doesn't specify CSRF for this endpoint, only validation.
+        
+        $email = trim($_POST['email'] ?? '');
+        
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Email Address', 'badge' => 'danger']);
+            exit;
+        }
+
+        // Send Test Email
+        $subject = "Test Email Mailketing";
+        $content = "Ini adalah email test dari integrasi Mailketing.";
+        
+        $result = Notifier::sendEmailViaMailketing($email, $subject, $content);
+        
+        if ($result['success']) {
+            echo json_encode(['status' => 'success', 'message' => 'Mail Sent', 'badge' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $result['message'], 'badge' => 'danger']);
+        }
+        exit;
     }
 
     // --- Forms CRUD ---

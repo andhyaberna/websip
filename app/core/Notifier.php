@@ -2,11 +2,120 @@
 
 require_once __DIR__ . '/DB.php';
 require_once __DIR__ . '/Auth.php';
+require_once __DIR__ . '/Settings.php';
 
 class Notifier {
     
     /**
+     * Send Email via Mailketing API
+     * 
+     * @param string $to
+     * @param string $subject
+     * @param string $html
+     * @param string|null $attach1 (Optional path to attachment)
+     * @return array ['success' => bool, 'message' => string]
+     */
+    public static function sendEmailViaMailketing($to, $subject, $html, $attach1 = null) {
+        // 1. Validasi Pra-Kirim
+        $enabled = Settings::get('mailketing_enabled');
+        if (!$enabled) {
+            return ['success' => false, 'message' => 'Mailketing not enabled'];
+        }
+
+        $apiToken = Settings::get('mailketing_api_token');
+        if (empty($apiToken)) {
+            return ['success' => false, 'message' => 'API Token kosong'];
+        }
+
+        $senderEmail = Settings::get('mailketing_sender_email');
+        if (empty($senderEmail) || !filter_var($senderEmail, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'message' => 'Sender email kosong atau tidak valid'];
+        }
+
+        $senderName = Settings::get('mailketing_sender_name', 'Websip Admin');
+
+        if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'message' => 'Recipient email tidak valid'];
+        }
+
+        // 2. Prepare Data
+        $url = 'https://api.mailketing.co.id/api/v1/send';
+        $params = [
+            'from_name' => $senderName,
+            'from_email' => $senderEmail,
+            'recipient' => $to,
+            'subject' => substr($subject, 0, 255), // Max 255 chars
+            'content' => $html,
+            'api_token' => $apiToken
+        ];
+
+        if ($attach1 && file_exists($attach1)) {
+            $params['attach1'] = new CURLFile($attach1);
+        }
+
+        // 3. Send Request with Retry
+        $maxRetries = 3;
+        $attempt = 0;
+        $response = false;
+        $error = '';
+        
+        while ($attempt < $maxRetries) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params)); // x-www-form-urlencoded
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Requirement 5: 30 seconds
+            
+            $response = curl_exec($ch);
+            
+            if ($response !== false) {
+                curl_close($ch);
+                break;
+            }
+            
+            $error = curl_error($ch);
+            curl_close($ch);
+            $attempt++;
+            
+            if ($attempt < $maxRetries) {
+                sleep(1); // Wait 1s before retry
+            }
+        }
+
+        if ($response === false) {
+            self::log($to, 'email', $subject, 'failed', "Curl Error after $maxRetries attempts: $error");
+            return ['success' => false, 'message' => "Curl Error: $error"];
+        }
+
+        // 4. Parse Response
+        $result = json_decode($response, true);
+        $status = 'failed';
+        $logMessage = $response;
+        $success = false;
+        $returnMessage = '';
+
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (isset($result['status']) && $result['status'] === 'success') {
+                $status = 'sent';
+                $success = true;
+                $returnMessage = 'Mail sent successfully';
+            } else {
+                $returnMessage = isset($result['message']) ? $result['message'] : 'Unknown error from Mailketing';
+            }
+        } else {
+            $returnMessage = 'Invalid JSON response from Mailketing';
+        }
+
+        // 5. Log
+        self::log($to, 'email', $subject, $status, $logMessage);
+
+        return ['success' => $success, 'message' => $returnMessage];
+    }
+
+    /**
      * Send Email using native mail()
+
      * 
      * @param string $to
      * @param string $subject

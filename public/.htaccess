@@ -1,5 +1,11 @@
-RewriteEngine On
+<IfModule mod_rewrite.c>
+ RewriteEngine On
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
+ # jika file/folder ada, jangan rewrite
+ RewriteCond %{REQUEST_FILENAME} -f [OR]
+ RewriteCond %{REQUEST_FILENAME} -d
+ RewriteRule ^ - [L]
+
+ # rewrite semua ke index.php
+ RewriteRule ^ index.php [L]
+</IfModule>
