@@ -34,8 +34,17 @@ $router->register('POST', '/login', 'AuthController@authenticate');
 $router->register('POST', '/logout', 'AuthController@logout');
 $router->register('GET', '/logout', 'AuthController@logout'); // For convenience
 
-// Protected Routes
-$router->register('GET', '/admin/dashboard', 'AdminController@index');
+// Admin Routes
+$router->register('GET', '/admin', 'AdminController@index');
+$router->register('GET', '/admin/dashboard', 'AdminController@index'); // Alias
+$router->register('GET', '/admin/forms', 'AdminController@forms');
+$router->register('GET', '/admin/forms/create', 'AdminController@createForm');
+$router->register('POST', '/admin/forms/create', 'AdminController@storeForm');
+$router->register('GET', '/admin/forms/{id}/edit', 'AdminController@editForm');
+$router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm');
+$router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
+
+// User Dashboard Routes
 $router->register('GET', '/user/dashboard', 'DashboardController@index'); // Keep for backward compat
 $router->register('GET', '/dashboard', 'DashboardController@index'); // Alias
 $router->register('GET', '/app', 'DashboardController@index');
