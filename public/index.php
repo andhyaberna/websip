@@ -20,6 +20,7 @@ require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/AdminProductController.php';
 require_once __DIR__ . '/../app/controllers/AdminSettingsController.php';
+require_once __DIR__ . '/../app/controllers/ProfileController.php';
 require_once __DIR__ . '/../app/controllers/AdminUserController.php';
 // require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
@@ -84,6 +85,8 @@ $router->register('POST', '/join/{slug}', 'JoinFormController@store');
 // Authentication Routes
 $router->register('GET', '/login', 'AuthController@login');
 $router->register('POST', '/login', 'AuthController@authenticate');
+$router->register('GET', '/login/2fa', 'AuthController@show2FA');
+$router->register('POST', '/login/2fa', 'AuthController@verify2FA');
 $router->register('GET', '/register', 'AuthController@register');
 $router->register('POST', '/register', 'AuthController@store');
 $router->register('POST', '/logout', 'AuthController@logout');
@@ -116,9 +119,16 @@ $router->register('POST', '/admin/settings/test', 'AdminSettingsController@testC
 $router->register('GET', '/admin/settings/export', 'AdminSettingsController@export');
 $router->register('POST', '/admin/settings/import', 'AdminSettingsController@import');
 
-// Admin Integration Test
-$router->register('POST', '/admin/integrations/test-email', 'AdminController@testEmail');
-$router->register('POST', '/admin/integrations/test-wa', 'AdminController@testWa');
+// Profile Settings (Admin & User)
+$router->register('GET', '/profile', 'ProfileController@index');
+$router->register('POST', '/profile/update', 'ProfileController@updateProfile');
+$router->register('POST', '/profile/password', 'ProfileController@updatePassword');
+$router->register('POST', '/profile/preferences', 'ProfileController@updatePreferences');
+$router->register('POST', '/profile/email', 'ProfileController@requestEmailChange');
+$router->register('POST', '/profile/verify-email', 'ProfileController@verifyEmailChange');
+$router->register('POST', '/profile/2fa/setup', 'ProfileController@setup2FA');
+$router->register('POST', '/profile/2fa/confirm', 'ProfileController@confirm2FA');
+$router->register('POST', '/profile/2fa/disable', 'ProfileController@disable2FA');
 
 // Admin Users
 $router->register('GET', '/admin/users', 'AdminUserController@index');

@@ -44,6 +44,9 @@
             <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="mailketing-tab" data-tabs-target="#mailketing" type="button" role="tab" aria-controls="mailketing" aria-selected="false">Mailketing</button>
         </li>
         <li class="mr-2" role="presentation">
+            <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="templates-tab" data-tabs-target="#templates" type="button" role="tab" aria-controls="templates" aria-selected="false">Templates</button>
+        </li>
+        <li class="mr-2" role="presentation">
             <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="backup-tab" data-tabs-target="#backup" type="button" role="tab" aria-controls="backup" aria-selected="false">Backup & Restore</button>
         </li>
     </ul>
@@ -145,6 +148,124 @@
             <div class="flex items-center justify-between pt-4 border-t">
                 <button type="submit" class="text-white bg-indigo-700 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Save Mailketing Settings</button>
                 <button type="button" onclick="testConnection('mailketing')" class="text-indigo-700 bg-white border border-indigo-700 hover:bg-indigo-50 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Test Connection</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Templates Tab -->
+    <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="templates" role="tabpanel" aria-labelledby="templates-tab">
+        <form action="<?php echo base_url('admin/settings/update'); ?>" method="POST" class="space-y-8">
+            <input type="hidden" name="csrf_token" value="<?php echo Auth::generateCSRF(); ?>">
+
+            <!-- WhatsApp Templates -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">WhatsApp Templates (Starsender)</h3>
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label for="wa_template_register_success" class="block mb-2 text-sm font-medium text-gray-900">Registration Success</label>
+                        <textarea id="wa_template_register_success" name="wa_template_register_success" rows="2" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['wa_template_register_success'] ?? ''); ?></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}</p>
+                    </div>
+                    <div>
+                        <label for="wa_template_otp" class="block mb-2 text-sm font-medium text-gray-900">OTP Code</label>
+                        <textarea id="wa_template_otp" name="wa_template_otp" rows="2" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['wa_template_otp'] ?? ''); ?></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {otp}</p>
+                    </div>
+                    <div>
+                        <label for="wa_template_login_alert" class="block mb-2 text-sm font-medium text-gray-900">Login Alert</label>
+                        <textarea id="wa_template_login_alert" name="wa_template_login_alert" rows="2" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['wa_template_login_alert'] ?? ''); ?></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {ip}, {time}</p>
+                    </div>
+                    <div>
+                        <label for="wa_template_admin_reset_password" class="block mb-2 text-sm font-medium text-gray-900">Admin Reset Password</label>
+                        <textarea id="wa_template_admin_reset_password" name="wa_template_admin_reset_password" rows="2" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['wa_template_admin_reset_password'] ?? ''); ?></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {password}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Templates -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Email Templates (Mailketing)</h3>
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- OTP -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <h4 class="text-sm font-bold text-gray-700">OTP Verification</h4>
+                        </div>
+                        <div>
+                            <label for="email_template_otp_subject" class="block mb-2 text-sm font-medium text-gray-900">Subject</label>
+                            <input type="text" id="email_template_otp_subject" name="email_template_otp_subject" value="<?php echo htmlspecialchars($settings['email_template_otp_subject'] ?? ''); ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        </div>
+                        <div>
+                            <label for="email_template_otp_body" class="block mb-2 text-sm font-medium text-gray-900">Body (HTML)</label>
+                            <textarea id="email_template_otp_body" name="email_template_otp_body" rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['email_template_otp_body'] ?? ''); ?></textarea>
+                            <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {otp}</p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Reset Password -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <h4 class="text-sm font-bold text-gray-700">Admin Reset Password</h4>
+                        </div>
+                        <div>
+                            <label for="email_template_admin_reset_password_subject" class="block mb-2 text-sm font-medium text-gray-900">Subject</label>
+                            <input type="text" id="email_template_admin_reset_password_subject" name="email_template_admin_reset_password_subject" value="<?php echo htmlspecialchars($settings['email_template_admin_reset_password_subject'] ?? ''); ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        </div>
+                        <div>
+                            <label for="email_template_admin_reset_password_body" class="block mb-2 text-sm font-medium text-gray-900">Body (HTML)</label>
+                            <textarea id="email_template_admin_reset_password_body" name="email_template_admin_reset_password_body" rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['email_template_admin_reset_password_body'] ?? ''); ?></textarea>
+                            <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {password}</p>
+                        </div>
+                    </div>
+
+                    <!-- Register Success -->
+                    <div class="border p-4 rounded bg-white">
+                        <h4 class="font-medium text-gray-700 mb-3">Registration Success</h4>
+                        <div class="mb-3">
+                            <label for="email_template_register_success_subject" class="block mb-1 text-sm font-medium text-gray-900">Subject</label>
+                            <input type="text" id="email_template_register_success_subject" name="email_template_register_success_subject" value="<?php echo htmlspecialchars($settings['email_template_register_success_subject'] ?? ''); ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        </div>
+                        <div>
+                            <label for="email_template_register_success_body" class="block mb-1 text-sm font-medium text-gray-900">Body (HTML)</label>
+                            <textarea id="email_template_register_success_body" name="email_template_register_success_body" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['email_template_register_success_body'] ?? ''); ?></textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}</p>
+                    </div>
+
+                    <!-- Password Reset -->
+                    <div class="border p-4 rounded bg-white">
+                        <h4 class="font-medium text-gray-700 mb-3">Password Reset</h4>
+                        <div class="mb-3">
+                            <label for="email_template_password_reset_subject" class="block mb-1 text-sm font-medium text-gray-900">Subject</label>
+                            <input type="text" id="email_template_password_reset_subject" name="email_template_password_reset_subject" value="<?php echo htmlspecialchars($settings['email_template_password_reset_subject'] ?? ''); ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        </div>
+                        <div>
+                            <label for="email_template_password_reset_body" class="block mb-1 text-sm font-medium text-gray-900">Body (HTML)</label>
+                            <textarea id="email_template_password_reset_body" name="email_template_password_reset_body" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['email_template_password_reset_body'] ?? ''); ?></textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {link}</p>
+                    </div>
+
+                    <!-- Login Alert -->
+                    <div class="border p-4 rounded bg-white">
+                        <h4 class="font-medium text-gray-700 mb-3">Login Alert</h4>
+                        <div class="mb-3">
+                            <label for="email_template_login_alert_subject" class="block mb-1 text-sm font-medium text-gray-900">Subject</label>
+                            <input type="text" id="email_template_login_alert_subject" name="email_template_login_alert_subject" value="<?php echo htmlspecialchars($settings['email_template_login_alert_subject'] ?? ''); ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        </div>
+                        <div>
+                            <label for="email_template_login_alert_body" class="block mb-1 text-sm font-medium text-gray-900">Body (HTML)</label>
+                            <textarea id="email_template_login_alert_body" name="email_template_login_alert_body" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"><?php echo htmlspecialchars($settings['email_template_login_alert_body'] ?? ''); ?></textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Placeholders: {name}, {ip}, {time}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t">
+                <button type="submit" class="text-white bg-indigo-700 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Save Templates</button>
             </div>
         </form>
     </div>

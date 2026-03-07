@@ -1,5 +1,5 @@
 -- Database: websip
--- Schema Version: 1.0 (Based on user.sql snapshot)
+-- Schema Version: 1.1 (Consolidated)
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -16,7 +16,11 @@ CREATE TABLE `users` (
   `status` ENUM('active','blocked') DEFAULT 'active',
   `role` ENUM('user','admin') DEFAULT 'user',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `last_login` TIMESTAMP NULL DEFAULT NULL
+  `last_login` TIMESTAMP NULL DEFAULT NULL,
+  `two_factor_secret` VARCHAR(255) DEFAULT NULL,
+  `two_factor_enabled` TINYINT(1) DEFAULT 0,
+  `otp_code` VARCHAR(6) DEFAULT NULL,
+  `otp_expires_at` TIMESTAMP NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -66,7 +70,7 @@ CREATE TABLE `form_products` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `form_id` INT NOT NULL,
   `product_id` INT NOT NULL,
-  UNIQUE KEY `uniq_form_product` (`form_id`, `product_id`),
+  `uniq_form_product` UNIQUE KEY (`form_id`, `product_id`),
   CONSTRAINT `fk_form_products_form` FOREIGN KEY (`form_id`) REFERENCES `access_forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_form_products_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -111,6 +115,47 @@ CREATE TABLE `audit_logs` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT `fk_audit_logs_admin` FOREIGN KEY (`actor_admin_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_audit_logs_user` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `settings`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `settings`;
+CREATE TABLE `settings` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `key` VARCHAR(100) NOT NULL UNIQUE,
+  `value` TEXT DEFAULT NULL,
+  `group` VARCHAR(50) DEFAULT 'general',
+  `type` VARCHAR(50) DEFAULT 'text',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `user_preferences`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `user_preferences`;
+CREATE TABLE `user_preferences` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `key` VARCHAR(50) NOT NULL,
+  `value` VARCHAR(255) DEFAULT NULL,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uniq_user_pref` (`user_id`, `key`),
+  CONSTRAINT `fk_user_preferences_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `login_history`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `login_history`;
+CREATE TABLE `login_history` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `ip_address` VARCHAR(45) NOT NULL,
+  `user_agent` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_login_history_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

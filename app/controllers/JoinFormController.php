@@ -146,29 +146,9 @@ class JoinFormController {
             // Auto Login
             Auth::login($user);
 
-            // Send Welcome Email (Mailketing)
+            // Send Welcome Notifications
             try {
-                if (Settings::get('mailketing_enabled')) {
-                    $appName = Settings::get('app_name', 'Websip');
-                    $subject = "Selamat Datang di {$appName}";
-                    $htmlContent = "<h3>Halo, " . htmlspecialchars($user['name']) . "</h3><p>Selamat bergabung di {$appName}.</p>";
-                    
-                    Notifier::sendEmailViaMailketing($user['email'], $subject, $htmlContent);
-                }
-            } catch (Exception $e) {
-                // Log error but do not stop flow
-                // Notifier::log(...) is already called inside sendEmailViaMailketing for failures
-            }
-
-            // Send Welcome WA (Starsender)
-            try {
-                if (Settings::get('starsender_enabled')) {
-                    $appName = Settings::get('app_name', 'Websip');
-                    $loginUrl = base_url('login');
-                    $waMessage = "Halo {$user['name']}, akun kamu sudah aktif di {$appName}. Silakan login: {$loginUrl}";
-                    
-                    Notifier::sendWaViaStarsender($user['phone'], $waMessage);
-                }
+                Notifier::sendRegisterSuccess($user);
             } catch (Exception $e) {
                 // Log error but do not stop flow
             }

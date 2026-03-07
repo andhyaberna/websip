@@ -41,7 +41,14 @@ class AdminSettingsController {
             'starsender_retry', 'starsender_template_welcome',
             'mailketing_enabled', 'mailketing_api_token', 'mailketing_smtp_host', 'mailketing_smtp_port',
             'mailketing_smtp_user', 'mailketing_smtp_pass', 'mailketing_sender_email',
-            'mailketing_sender_name'
+            'mailketing_sender_name',
+            // Notification Templates
+            'wa_template_register_success', 'wa_template_otp', 'wa_template_login_alert', 'wa_template_admin_reset_password',
+            'email_template_otp_subject', 'email_template_otp_body',
+            'email_template_admin_reset_password_subject', 'email_template_admin_reset_password_body',
+            'email_template_register_success_subject', 'email_template_register_success_body',
+            'email_template_password_reset_subject', 'email_template_password_reset_body',
+            'email_template_login_alert_subject', 'email_template_login_alert_body'
         ];
 
         $changes = [];

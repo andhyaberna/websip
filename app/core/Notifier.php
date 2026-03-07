@@ -3,6 +3,7 @@
 require_once __DIR__ . '/DB.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Settings.php';
+require_once __DIR__ . '/UserPreferences.php';
 
 class Notifier {
     
@@ -353,6 +354,165 @@ class Notifier {
         self::log($phone, 'wa', $message, $status, $response);
 
         return ['status' => $status, 'provider_response' => $response];
+    }
+
+    /**
+     * Replace placeholders in template
+     */
+    private static function replacePlaceholders($template, $data) {
+        if (empty($template)) return '';
+        foreach ($data as $key => $value) {
+            $template = str_replace('{' . $key . '}', $value, $template);
+        }
+        return $template;
+    }
+
+    /**
+     * Send Registration Success Notification
+     */
+    public static function sendRegisterSuccess($user) {
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = ['name' => $name];
+        
+        // WhatsApp
+        $waTemplate = Settings::get('wa_template_register_success');
+        $phone = $user['phone'] ?? $user['phone_number'] ?? '';
+        
+        if ($waTemplate && !empty($phone)) {
+            self::sendWaViaStarsender($phone, self::replacePlaceholders($waTemplate, $data));
+        }
+        
+        // Email
+        $emailSubject = Settings::get('email_template_register_success_subject');
+        $emailBody = Settings::get('email_template_register_success_body');
+        if ($emailSubject && $emailBody && !empty($user['email'])) {
+            self::sendEmailViaMailketing($user['email'], self::replacePlaceholders($emailSubject, $data), self::replacePlaceholders($emailBody, $data));
+        }
+    }
+
+    /**
+     * Send OTP Notification
+     * 
+     * @param array $user User data
+     * @param string $otp OTP Code
+     * @param string|null $emailOverride Optional email override (e.g. for email change verification)
+     * @return array Status of each channel ['wa' => array, 'email' => array]
+     */
+    public static function sendOTP($user, $otp, $emailOverride = null) {
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = [
+            'name' => $name,
+            'otp' => $otp
+        ];
+        
+        $results = [
+            'wa' => ['success' => false, 'message' => 'Not configured or phone missing'], 
+            'email' => ['success' => false, 'message' => 'Not configured or email missing']
+        ];
+
+        // WhatsApp
+        $waTemplate = Settings::get('wa_template_otp');
+        $phone = $user['phone'] ?? $user['phone_number'] ?? '';
+        
+        if ($waTemplate && !empty($phone)) {
+            $results['wa'] = self::sendWaViaStarsender($phone, self::replacePlaceholders($waTemplate, $data));
+        }
+
+        // Email
+        $emailSubject = Settings::get('email_template_otp_subject');
+        $emailBody = Settings::get('email_template_otp_body');
+        $targetEmail = $emailOverride ?? $user['email'] ?? null;
+
+        if ($emailSubject && $emailBody && !empty($targetEmail)) {
+            $results['email'] = self::sendEmailViaMailketing($targetEmail, self::replacePlaceholders($emailSubject, $data), self::replacePlaceholders($emailBody, $data));
+        }
+        
+        return $results;
+    }
+
+    /**
+     * Send Login Alert
+     */
+    public static function sendLoginAlert($user, $ip) {
+        $userId = $user['id'] ?? null;
+        if (!$userId) return;
+
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = [
+            'name' => $name,
+            'ip' => $ip,
+            'time' => date('Y-m-d H:i:s')
+        ];
+        
+        // WhatsApp
+        $waPref = UserPreferences::get($userId, 'notify_login_wa') ?? '1';
+        $waTemplate = Settings::get('wa_template_login_alert');
+        $phone = $user['phone'] ?? $user['phone_number'] ?? '';
+        
+        if ($waPref === '1' && $waTemplate && !empty($phone)) {
+            self::sendWaViaStarsender($phone, self::replacePlaceholders($waTemplate, $data));
+        }
+        
+        // Email
+        $emailPref = UserPreferences::get($userId, 'notify_login_email') ?? '1';
+        $emailSubject = Settings::get('email_template_login_alert_subject');
+        $emailBody = Settings::get('email_template_login_alert_body');
+        
+        if ($emailPref === '1' && $emailSubject && $emailBody && !empty($user['email'])) {
+            self::sendEmailViaMailketing($user['email'], self::replacePlaceholders($emailSubject, $data), self::replacePlaceholders($emailBody, $data));
+        }
+    }
+
+    /**
+     * Send Password Reset Link
+     */
+    public static function sendPasswordReset($user, $link) {
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = [
+            'name' => $name,
+            'link' => $link
+        ];
+        
+        // Email only usually
+        $emailSubject = Settings::get('email_template_password_reset_subject');
+        $emailBody = Settings::get('email_template_password_reset_body');
+        if ($emailSubject && $emailBody && !empty($user['email'])) {
+            self::sendEmailViaMailketing($user['email'], self::replacePlaceholders($emailSubject, $data), self::replacePlaceholders($emailBody, $data));
+        }
+    }
+
+    /**
+     * Send Admin Reset Password Notification
+     */
+    public static function sendAdminPasswordReset($user, $newPassword) {
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = [
+            'name' => $name,
+            'password' => $newPassword
+        ];
+        
+        $results = [
+            'wa' => ['success' => false, 'message' => 'Not configured or phone missing'], 
+            'email' => ['success' => false, 'message' => 'Not configured or email missing']
+        ];
+        
+        // WhatsApp
+        $waTemplate = Settings::get('wa_template_admin_reset_password');
+        $phone = $user['phone'] ?? $user['phone_number'] ?? '';
+        
+        if ($waTemplate && !empty($phone)) {
+            $results['wa'] = self::sendWaViaStarsender($phone, self::replacePlaceholders($waTemplate, $data));
+        }
+        
+        // Email
+        $emailSubject = Settings::get('email_template_admin_reset_password_subject');
+        $emailBody = Settings::get('email_template_admin_reset_password_body');
+        
+        if ($emailSubject && $emailBody && !empty($user['email'])) {
+            $results['email'] = self::sendEmailViaMailketing($user['email'], self::replacePlaceholders($emailSubject, $data), self::replacePlaceholders($emailBody, $data));
+        }
+        
+        return $results;
     }
 
     private static function log($recipient, $type, $content, $status, $response) {

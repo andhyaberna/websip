@@ -305,19 +305,26 @@ class AdminUserController {
         $tempPassword = $flash['password'];
 
         $db = DB::getInstance();
-        $stmt = $db->prepare("SELECT email, phone FROM users WHERE id = :id");
+        $stmt = $db->prepare("SELECT * FROM users WHERE id = :id"); // Fetch all for template placeholders
         $stmt->execute([':id' => $id]);
         $user = $stmt->fetch();
 
+        $result = Notifier::sendAdminPasswordReset($user, $tempPassword);
+
         if ($type === 'email') {
-            $htmlBody = "<p>Halo,</p><p>Password akun Anda telah direset oleh Admin.</p><p>Password Baru: <strong>{$tempPassword}</strong></p><p>Silakan login dan segera ganti password Anda.</p>";
-            $result = Notifier::sendEmail($user['email'], 'Reset Password Akun', $htmlBody);
+            if ($result['email']['success']) {
+                $this->jsonResponse(['status' => 'sent', 'message' => 'Email sent']);
+            } else {
+                $this->jsonResponse(['error' => 'Email failed: ' . ($result['email']['message'] ?? 'Unknown')], 500);
+            }
         } elseif ($type === 'wa') {
-            $message = "Password baru Anda: {$tempPassword}. Simpan baik-baik.";
-            $result = Notifier::sendWA($user['phone'], $message);
+            if ($result['wa']['success']) {
+                $this->jsonResponse(['status' => 'sent', 'message' => 'WhatsApp sent']);
+            } else {
+                $this->jsonResponse(['error' => 'WhatsApp failed: ' . ($result['wa']['message'] ?? 'Unknown')], 500);
+            }
         } else {
             $this->jsonResponse(['error' => 'Invalid notification type'], 400);
-            return;
         }
 
         $this->jsonResponse($result);
