@@ -174,8 +174,9 @@ class Notifier {
         }
 
         // 4. HTTP Request
-        $url = 'https://api.starsender.online/api/send';
-        $maxRetries = 3;
+        $url = Settings::get('starsender_endpoint', 'https://starsender.online/api/sendText');
+        $maxRetries = Settings::get('starsender_retry', 3);
+        $timeout = Settings::get('starsender_timeout', 30);
         $attempt = 0;
         $response = false;
         $error = '';
@@ -184,12 +185,14 @@ class Notifier {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'message' => $message,
+                'tujuan' => $normalizedPhone
+            ]));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Authorization: ' . $apiKey
+                'apikey: ' . $apiKey
             ]);
             
             $response = curl_exec($ch);

@@ -20,7 +20,7 @@ if (!function_exists('view')) {
 // Mock Base URL
 if (!function_exists('base_url')) {
     function base_url($path = '') {
-        return "http://localhost/websip/public/" . $path;
+        return "http://localhost/websip/" . $path;
     }
 }
 
@@ -106,7 +106,7 @@ class JoinFormTest {
         $output = ob_get_clean();
 
         // Check Redirect
-        if ($this->controller->redirectUrl === "http://localhost/websip/public/user/dashboard") {
+        if ($this->controller->redirectUrl === "http://localhost/websip/user/dashboard") {
             echo "PASS: Redirected to dashboard.\n";
         } else {
             echo "FAIL: Redirect URL mismatch. Got: " . $this->controller->redirectUrl . "\n";

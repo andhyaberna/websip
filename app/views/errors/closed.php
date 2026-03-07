@@ -20,4 +20,5 @@
 </div>
 
 <?php $content = ob_get_clean(); ?>
-<?php include __DIR__ . '/../../layouts/guest.php'; ?>
+
+<?php include __DIR__ . '/../layouts/guest.php'; ?>

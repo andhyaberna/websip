@@ -21,10 +21,24 @@ class Router {
         if ($path === null) {
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             
-            // Remove base path if exists (e.g. /websip/public)
-            $scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-            if ($scriptName !== '/' && strpos($path, $scriptName) === 0) {
-                $path = substr($path, strlen($scriptName));
+            // Get Script Directory (e.g. /websip/public)
+            $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+            
+            // Get Parent Directory (e.g. /websip) - for when public is hidden
+            $parentDir = dirname($scriptDir);
+            
+            // Remove base path if exists
+            if ($scriptDir !== '/' && strpos($path, $scriptDir) === 0) {
+                // Standard case: /websip/public/login
+                $path = substr($path, strlen($scriptDir));
+            } elseif ($parentDir !== '/' && $parentDir !== '.' && strpos($path, $parentDir) === 0) {
+                // Hidden public case: /websip/login
+                $path = substr($path, strlen($parentDir));
+            }
+            
+            // Ensure path starts with /
+            if (empty($path) || $path[0] !== '/') {
+                $path = '/' . $path;
             }
         }
         

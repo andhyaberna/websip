@@ -32,7 +32,7 @@ if (!function_exists('view')) {
 }
 if (!function_exists('base_url')) {
     function base_url($path = '') {
-        return "http://localhost/websip/public/$path";
+        return "http://localhost/websip/" . $path;
     }
 }
 

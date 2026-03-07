@@ -5,6 +5,24 @@ require_once __DIR__ . '/app/core/DB.php';
 try {
     $db = DB::getInstance();
     
+    // 0. Create Admin User
+    $adminEmail = 'admin@websip.test';
+    $stmt = $db->prepare("SELECT id FROM users WHERE email = :email");
+    $stmt->execute([':email' => $adminEmail]);
+    
+    if (!$stmt->fetch()) {
+        $hash = '$2y$10$J90tqbctCb8Cw.MCwkSisu1aZgpvjPi4p2wrdMLmCWCmrH/0x6V4a'; // Admin123!
+        $stmt = $db->prepare("INSERT INTO users (name, email, password_hash, role, status) VALUES (:name, :email, :hash, 'admin', 'active')");
+        $stmt->execute([
+            ':name' => 'Super Admin',
+            ':email' => $adminEmail,
+            ':hash' => $hash
+        ]);
+        echo "Created Admin User: $adminEmail\n";
+    } else {
+        echo "Admin User exists: $adminEmail\n";
+    }
+
     // 1. Create Test Form
     $slug = 'test-join';
     $stmt = $db->prepare("SELECT id FROM access_forms WHERE slug = :slug");

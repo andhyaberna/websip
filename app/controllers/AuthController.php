@@ -69,4 +69,91 @@ class AuthController {
         header('Location: ' . base_url('login'));
         exit;
     }
+
+    public function register() {
+        if (Auth::check()) {
+            header('Location: ' . base_url('dashboard'));
+            exit;
+        }
+
+        view('auth/register', [
+            'csrf_token' => Auth::generateCSRF()
+        ]);
+    }
+
+    public function store() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . base_url('register'));
+            exit;
+        }
+
+        $name = $_POST['name'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!Auth::checkCSRF($csrf_token)) {
+            view('auth/register', [
+                'error' => 'Invalid CSRF token.',
+                'csrf_token' => Auth::generateCSRF(),
+                'old_name' => $name,
+                'old_email' => $email
+            ]);
+            return;
+        }
+
+        // Basic validation
+        if (empty($name) || empty($email) || empty($password)) {
+             view('auth/register', [
+                'error' => 'All fields are required.',
+                'csrf_token' => Auth::generateCSRF(),
+                'old_name' => $name,
+                'old_email' => $email
+            ]);
+            return;
+        }
+
+        $db = DB::getInstance();
+        
+        // Check email exists
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            view('auth/register', [
+                'error' => 'Email already registered.',
+                'csrf_token' => Auth::generateCSRF(),
+                'old_name' => $name,
+                'old_email' => $email
+            ]);
+            return;
+        }
+
+        // Create User
+        try {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("INSERT INTO users (name, email, password_hash, role, status, created_at) VALUES (?, ?, ?, 'user', 'active', NOW())");
+            $stmt->execute([$name, $email, $hash]);
+            
+            // Login user
+            $userId = $db->lastInsertId();
+            Auth::login([
+                'id' => $userId,
+                'name' => $name,
+                'email' => $email,
+                'role' => 'user',
+                'status' => 'active'
+            ]);
+
+            header('Location: ' . base_url('dashboard'));
+            exit;
+
+        } catch (Exception $e) {
+            view('auth/register', [
+                'error' => 'Registration failed: ' . $e->getMessage(),
+                'csrf_token' => Auth::generateCSRF(),
+                'old_name' => $name,
+                'old_email' => $email
+            ]);
+        }
+    }
 }

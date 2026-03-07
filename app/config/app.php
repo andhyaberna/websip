@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'base_url' => 'http://localhost/websip/public',
+    'base_url' => 'http://localhost/websip',
     'app_name' => 'Websip'
 ];

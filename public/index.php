@@ -19,12 +19,54 @@ require_once __DIR__ . '/../app/controllers/StatusController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/AdminProductController.php';
+require_once __DIR__ . '/../app/controllers/AdminSettingsController.php';
 require_once __DIR__ . '/../app/controllers/AdminUserController.php';
 // require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
 require_once __DIR__ . '/../app/controllers/JoinFormController.php';
 require_once __DIR__ . '/../app/controllers/DashboardController.php';
 
+// Simple Logging
+$logFile = __DIR__ . '/../storage/logs/access.log';
+$timestamp = date('Y-m-d H:i:s');
+$method = $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN';
+$uri = $_SERVER['REQUEST_URI'] ?? 'UNKNOWN';
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+$logEntry = "[$timestamp] $ip $method $uri" . PHP_EOL;
+// Ensure directory exists
+if (!is_dir(dirname($logFile))) {
+    mkdir(dirname($logFile), 0755, true);
+}
+file_put_contents($logFile, $logEntry, FILE_APPEND);
+
 $router = new Router();
+
+// Error Handling
+set_exception_handler(function ($e) {
+    $logFile = __DIR__ . '/../storage/logs/error.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $message = "[$timestamp] Exception: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine() . PHP_EOL;
+    $message .= $e->getTraceAsString() . PHP_EOL;
+    file_put_contents($logFile, $message, FILE_APPEND);
+    
+    http_response_code(500);
+    if (defined('APP_DEBUG') && APP_DEBUG) {
+        echo "<h1>Internal Server Error</h1>";
+        echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
+    } else {
+        echo "<h1>500 Internal Server Error</h1>";
+        echo "<p>Something went wrong. Please try again later.</p>";
+    }
+});
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    $logFile = __DIR__ . '/../storage/logs/error.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $message = "[$timestamp] Error ($errno): $errstr in $errfile:$errline" . PHP_EOL;
+    file_put_contents($logFile, $message, FILE_APPEND);
+    
+    // Don't stop execution for non-fatal errors
+    return false; 
+});
 
 // Ping Route for Health Check
 $router->register('GET', '/_ping', function() {
@@ -42,6 +84,8 @@ $router->register('POST', '/join/{slug}', 'JoinFormController@store');
 // Authentication Routes
 $router->register('GET', '/login', 'AuthController@login');
 $router->register('POST', '/login', 'AuthController@authenticate');
+$router->register('GET', '/register', 'AuthController@register');
+$router->register('POST', '/register', 'AuthController@store');
 $router->register('POST', '/logout', 'AuthController@logout');
 $router->register('GET', '/logout', 'AuthController@logout'); // For convenience
 
@@ -65,6 +109,13 @@ $router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm'
 $router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
 $router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
 
+// Admin Settings
+$router->register('GET', '/admin/settings', 'AdminSettingsController@index');
+$router->register('POST', '/admin/settings/update', 'AdminSettingsController@update');
+$router->register('POST', '/admin/settings/test', 'AdminSettingsController@testConnection');
+$router->register('GET', '/admin/settings/export', 'AdminSettingsController@export');
+$router->register('POST', '/admin/settings/import', 'AdminSettingsController@import');
+
 // Admin Integration Test
 $router->register('POST', '/admin/integrations/test-email', 'AdminController@testEmail');
 $router->register('POST', '/admin/integrations/test-wa', 'AdminController@testWa');
@@ -86,21 +137,4 @@ $router->register('GET', '/app/bonus', 'DashboardController@bonuses');
 $router->register('GET', '/app/item/{id}', 'DashboardController@item');
 
 // Dispatch
-$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$scriptName = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-
-if ($scriptName !== '/' && strpos($requestUri, $scriptName) === 0) {
-    $path = substr($requestUri, strlen($scriptName));
-} else {
-    $path = $requestUri;
-}
-
-if ($path === false || $path === '') {
-    $path = '/';
-}
-
-$router->register('GET', '/_route', function() use ($path) {
-    echo "Path: " . $path;
-});
-
-$router->dispatch($path);
+$router->dispatch();

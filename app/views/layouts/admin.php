@@ -49,6 +49,9 @@ $base_url = $app_config['base_url'];
                 <a href="<?php echo base_url('admin/products'); ?>" class="flex items-center px-4 py-2 rounded hover:bg-slate-700 transition <?php echo strpos($_SERVER['REQUEST_URI'], 'products') !== false ? 'bg-slate-700' : ''; ?>">
                     <span class="mr-3">📦</span> Products
                 </a>
+                <a href="<?php echo base_url('admin/settings'); ?>" class="flex items-center px-4 py-2 rounded hover:bg-slate-700 transition <?php echo strpos($_SERVER['REQUEST_URI'], 'settings') !== false ? 'bg-slate-700' : ''; ?>">
+                    <span class="mr-3">⚙️</span> Settings
+                </a>
                 <div class="border-t border-slate-700 my-4 pt-4">
                     <a href="<?php echo base_url('logout'); ?>" class="flex items-center px-4 py-2 rounded text-red-400 hover:bg-slate-700 hover:text-red-300 transition">
                         <span class="mr-3">🚪</span> Logout

@@ -13,7 +13,9 @@ if (!function_exists('view')) {
     function view($path, $data = []) {}
 }
 if (!function_exists('base_url')) {
-    function base_url($path = '') { return $path; }
+    function base_url($path = '') {
+        return "http://localhost/websip/" . $path;
+    }
 }
 
 class FinalQATest {
