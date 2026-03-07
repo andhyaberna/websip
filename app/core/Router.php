@@ -4,7 +4,15 @@ class Router {
     protected $routes = [];
 
     public function register($method, $path, $handler) {
-        $this->routes[$method][$path] = $handler;
+        // Convert {param} to regex capture group ([^/]+)
+        $regex = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '([^/]+)', $path);
+        // Add start and end delimiters
+        $regex = "#^" . $regex . "$#";
+        
+        $this->routes[$method][$path] = [
+            'handler' => $handler,
+            'regex' => $regex
+        ];
     }
 
     public function dispatch() {
@@ -20,20 +28,27 @@ class Router {
             $path = '/';
         }
 
-        if (isset($this->routes[$method][$path])) {
-            $handler = $this->routes[$method][$path];
-            
-            if (is_callable($handler)) {
-                call_user_func($handler);
-            } elseif (is_string($handler)) {
-                list($controller, $action) = explode('@', $handler);
-                require_once __DIR__ . "/../controllers/{$controller}.php";
-                $controllerInstance = new $controller();
-                $controllerInstance->$action();
+        if (isset($this->routes[$method])) {
+            foreach ($this->routes[$method] as $routePath => $route) {
+                if (preg_match($route['regex'], $path, $matches)) {
+                    array_shift($matches); // Remove full match
+                    
+                    $handler = $route['handler'];
+                    
+                    if (is_callable($handler)) {
+                        call_user_func_array($handler, $matches);
+                    } elseif (is_string($handler)) {
+                        list($controller, $action) = explode('@', $handler);
+                        require_once __DIR__ . "/../controllers/{$controller}.php";
+                        $controllerInstance = new $controller();
+                        call_user_func_array([$controllerInstance, $action], $matches);
+                    }
+                    return;
+                }
             }
-        } else {
-            http_response_code(404);
-            echo "404 Not Found";
         }
+
+        http_response_code(404);
+        echo "404 Not Found";
     }
 }

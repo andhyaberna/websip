@@ -17,16 +17,15 @@ require_once __DIR__ . '/../app/controllers/StatusController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
+require_once __DIR__ . '/../app/controllers/JoinFormController.php';
 
 $router = new Router();
 
 // Public Routes
 $router->register('GET', '/', 'HomeController@index');
 $router->register('GET', '/status', 'StatusController@index');
-$router->register('GET', '/join/sample', function() {
-    http_response_code(404);
-    echo "404 Not Found (Sample Link)";
-});
+$router->register('GET', '/join/{slug}', 'JoinFormController@index');
+$router->register('POST', '/join/{slug}', 'JoinFormController@store');
 
 // Authentication Routes
 $router->register('GET', '/login', 'AuthController@login');
