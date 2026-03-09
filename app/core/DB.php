@@ -19,17 +19,27 @@ class DB {
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
         
-        try {
-            $this->pdo = new PDO($dsn, $config['username'], $config['password'], $options);
-        } catch (PDOException $e) {
-            $logDir = __DIR__ . '/../../storage/logs';
-            if (!is_dir($logDir)) {
-                mkdir($logDir, 0777, true);
+        $attempts = 0;
+        $maxAttempts = 3;
+        
+        while ($attempts < $maxAttempts) {
+            try {
+                $this->pdo = new PDO($dsn, $config['username'], $config['password'], $options);
+                return;
+            } catch (PDOException $e) {
+                $attempts++;
+                if ($attempts >= $maxAttempts) {
+                    $logDir = __DIR__ . '/../../storage/logs';
+                    if (!is_dir($logDir)) {
+                        mkdir($logDir, 0777, true);
+                    }
+                    $errorLog = $logDir . '/db-error-' . date('Y-m-d') . '.log';
+                    $message = "[" . date('Y-m-d H:i:s') . "] Connection failed (Attempt $attempts/$maxAttempts): " . $e->getMessage() . PHP_EOL;
+                    file_put_contents($errorLog, $message, FILE_APPEND);
+                    die("Database connection failed. Please check logs.");
+                }
+                sleep(1);
             }
-            $errorLog = $logDir . '/db-error-' . date('Y-m-d') . '.log';
-            $message = "[" . date('Y-m-d H:i:s') . "] Connection failed: " . $e->getMessage() . PHP_EOL;
-            file_put_contents($errorLog, $message, FILE_APPEND);
-            die("Database connection failed. Please check logs.");
         }
     }
 
@@ -38,6 +48,13 @@ class DB {
             self::$instance = new self();
         }
         return self::$instance->pdo;
+    }
+
+    public static function closeConnection() {
+        if (self::$instance !== null) {
+            self::$instance->pdo = null;
+            self::$instance = null;
+        }
     }
 
     // Prevent cloning

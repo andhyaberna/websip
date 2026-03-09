@@ -72,6 +72,7 @@ class AuthController {
                 // 2FA Enabled
                 $_SESSION['2fa_pending_user_id'] = $user['id'];
                 unset($_SESSION['user']); // Logout partially
+                DB::closeConnection();
                 header('Location: ' . base_url('login/2fa'));
                 exit;
             }
@@ -80,6 +81,7 @@ class AuthController {
             $this->logLogin($user['id']);
 
             // Success
+            DB::closeConnection();
             if (Auth::isAdmin()) {
                 header('Location: ' . base_url('admin/dashboard'));
             } else {
@@ -147,6 +149,7 @@ class AuthController {
             
             $this->logLogin($userId);
             
+            DB::closeConnection();
             if (Auth::isAdmin()) {
                 header('Location: ' . base_url('admin/dashboard'));
             } else {
@@ -247,6 +250,7 @@ class AuthController {
                 // Ignore notification errors to not block registration flow
             }
 
+            DB::closeConnection();
             $this->redirect(base_url('dashboard'));
 
         } catch (Exception $e) {
