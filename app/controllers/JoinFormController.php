@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\DB;
 use App\Core\Notifier;
 use PDO;
+use Exception;
 
 class JoinFormController {
     

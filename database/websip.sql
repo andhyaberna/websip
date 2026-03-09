@@ -70,7 +70,7 @@ CREATE TABLE `form_products` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `form_id` INT NOT NULL,
   `product_id` INT NOT NULL,
-  `uniq_form_product` UNIQUE KEY (`form_id`, `product_id`),
+  UNIQUE KEY `uniq_form_product` (`form_id`, `product_id`),
   CONSTRAINT `fk_form_products_form` FOREIGN KEY (`form_id`) REFERENCES `access_forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_form_products_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

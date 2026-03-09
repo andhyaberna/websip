@@ -9,6 +9,7 @@ use App\Core\UserPreferences;
 use App\Core\Notifier;
 use App\Core\TwoFactorAuth;
 use PDO;
+use Exception;
 
 class ProfileController {
 

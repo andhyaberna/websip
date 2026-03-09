@@ -30,3 +30,62 @@
 #3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
 #4 C:\xampp\htdocs\websip\public\index.php(173): App\Core\Router->dispatch('GET', '/admin/settings')
 #5 {main}
+[2026-03-09 16:05:28] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'deleted_at' in 'where clause' in C:\xampp\htdocs\websip\app\controllers\AdminUserController.php:47
+#0 C:\xampp\htdocs\websip\app\controllers\AdminUserController.php(47): PDO->prepare('SELECT COUNT(*)...')
+#1 [internal function]: App\Controllers\AdminUserController->index()
+#2 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#3 C:\xampp\htdocs\websip\public\index.php(183): App\Core\Router->dispatch('GET', '/admin/users')
+#4 {main}
+[2026-03-09 16:05:37] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(183): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}
+[2026-03-09 16:12:14] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'deleted_at' in 'where clause' in C:\xampp\htdocs\websip\app\controllers\AdminUserController.php:47
+#0 C:\xampp\htdocs\websip\app\controllers\AdminUserController.php(47): PDO->prepare('SELECT COUNT(*)...')
+#1 [internal function]: App\Controllers\AdminUserController->index()
+#2 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#3 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/users')
+#4 {main}
+[2026-03-09 16:13:20] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}
+[2026-03-09 16:13:26] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}
+[2026-03-09 16:13:27] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}
+[2026-03-09 16:13:28] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}
+[2026-03-09 16:13:32] Exception: Class "App\Controllers\PDO" not found in C:\xampp\htdocs\websip\app\controllers\AdminController.php:196
+#0 [internal function]: App\Controllers\AdminController->editForm('1')
+#1 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#2 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms/1/...')
+#3 {main}
+[2026-03-09 16:13:34] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\forms\index.php:58
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminController.php(111): view('admin/forms/ind...', Array)
+#2 [internal function]: App\Controllers\AdminController->forms()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(186): App\Core\Router->dispatch('GET', '/admin/forms')
+#5 {main}

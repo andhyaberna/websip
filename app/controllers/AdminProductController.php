@@ -251,7 +251,7 @@ class AdminProductController {
 
         // 4. Mode Specific Validation
         $data['product_links'] = null;
-        $data['content_html'] = null;
+        $data['html_content'] = null;
 
         if ($mode === 'links') {
             $links = isset($input['links']) ? $input['links'] : [];

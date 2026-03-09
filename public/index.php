@@ -84,11 +84,25 @@ $router->register('POST', '/reset-password', 'AuthController@resetPassword');
 // Admin Routes
 $router->register('GET', '/admin', 'AdminController@index');
 $router->register('GET', '/admin/dashboard', 'AdminController@index'); // Alias
+
+// Admin Forms
+$router->register('GET', '/admin/forms', 'AdminController@forms');
+$router->register('GET', '/admin/forms/create', 'AdminController@createForm');
+$router->register('POST', '/admin/forms/create', 'AdminController@storeForm');
+$router->register('POST', '/admin/forms', 'AdminController@storeForm');
+$router->register('GET', '/admin/forms/{id}/edit', 'AdminController@editForm');
+$router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm');
+$router->register('POST', '/admin/forms/{id}', 'AdminController@updateForm');
+$router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
+$router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
+
 // Admin Products
 $router->register('GET', '/admin/products', 'AdminProductController@index');
 $router->register('GET', '/admin/products/create', 'AdminProductController@create');
+$router->register('POST', '/admin/products/create', 'AdminProductController@store');
 $router->register('POST', '/admin/products', 'AdminProductController@store');
 $router->register('GET', '/admin/products/{id}/edit', 'AdminProductController@edit');
+$router->register('POST', '/admin/products/{id}/edit', 'AdminProductController@update');
 $router->register('POST', '/admin/products/{id}', 'AdminProductController@update');
 $router->register('POST', '/admin/products/{id}/delete', 'AdminProductController@destroy');
 
@@ -97,7 +111,6 @@ $router->register('GET', '/admin/users', 'AdminUserController@index');
 $router->register('POST', '/admin/users/{id}/block', 'AdminUserController@block');
 $router->register('POST', '/admin/users/{id}/unblock', 'AdminUserController@unblock');
 $router->register('POST', '/admin/users/{id}/reset-password', 'AdminUserController@resetPassword');
-$router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
 
 // Admin Settings
 $router->register('GET', '/admin/settings', 'AdminSettingsController@index');

@@ -21,7 +21,7 @@ class Auth {
         self::start_session();
         
         $db = DB::getInstance();
-        $stmt = $db->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1");
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         $user = $stmt->fetch();

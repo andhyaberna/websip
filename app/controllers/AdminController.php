@@ -6,6 +6,8 @@ use App\Core\Middleware;
 use App\Core\Notifier;
 use App\Core\DB;
 use App\Core\Auth;
+use PDO;
+use Exception;
 
 class AdminController {
     
