@@ -38,7 +38,7 @@ class AdminResetPasswordTest {
         $this->db->exec("DELETE FROM users WHERE email = 'resetuser@example.com'");
         
         // Create Test User
-        $this->db->exec("INSERT INTO users (name, email, phone, role, status, password_hash) VALUES ('Reset User', 'resetuser@example.com', '08999888777', 'member', 'active', 'oldhash')");
+        $this->db->exec("INSERT INTO users (name, email, phone, role, status, password_hash) VALUES ('Reset User', 'resetuser@example.com', '08999888777', 'user', 'active', 'oldhash')");
         $this->userId = $this->db->lastInsertId();
 
         // Clear previous audit logs for this user ID (from previous test runs)

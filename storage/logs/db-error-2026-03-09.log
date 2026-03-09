@@ -1,3 +1,4 @@
 [2026-03-09 13:47:56] Connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
 [2026-03-09 13:48:35] Connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
 [2026-03-09 13:49:11] Connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[2026-03-09 13:55:48] Connection failed: SQLSTATE[HY000] [2006] MySQL server has gone away

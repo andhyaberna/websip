@@ -106,6 +106,11 @@ $router->register('POST', '/admin/settings/test-connection', 'AdminSettingsContr
 $router->register('POST', '/admin/settings/test-wa', 'AdminController@testWa');
 $router->register('POST', '/admin/settings/test-email', 'AdminController@testEmail');
 
+// Admin Notification Templates
+$router->register('GET', '/admin/notification-templates', 'AdminNotificationTemplateController@index');
+$router->register('GET', '/admin/notification-templates/{id}/edit', 'AdminNotificationTemplateController@edit');
+$router->register('POST', '/admin/notification-templates/{id}/update', 'AdminNotificationTemplateController@update');
+
 // User Dashboard Routes
 $router->register('GET', '/user/dashboard', 'DashboardController@index');
 $router->register('GET', '/user/products', 'DashboardController@products');

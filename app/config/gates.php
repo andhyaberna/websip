@@ -10,3 +10,7 @@ Gate::define('users.reset-password', function($user) {
 Gate::define('users.notify', function($user) {
     return $user['role'] === 'admin';
 });
+
+Gate::define('admin.settings', function($user) {
+    return $user['role'] === 'admin';
+});

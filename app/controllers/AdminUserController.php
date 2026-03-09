@@ -315,25 +315,40 @@ class AdminUserController {
         $stmt->execute([':id' => $id]);
         $user = $stmt->fetch();
 
-        $result = Notifier::sendAdminPasswordReset($user, $tempPassword);
+        $name = $user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User';
+        $data = [
+            'name' => $name,
+            'password' => $tempPassword
+        ];
 
         if ($type === 'email') {
-            if ($result['email']['success']) {
+            if (empty($user['email'])) {
+                 $this->jsonResponse(['error' => 'User does not have an email address'], 400);
+                 return;
+            }
+            $result = Notifier::sendEmailTemplate($user['email'], 'admin_reset_password', $data);
+            
+            if ($result['success']) {
                 $this->jsonResponse(['status' => 'sent', 'message' => 'Email sent']);
             } else {
-                $this->jsonResponse(['error' => 'Email failed: ' . ($result['email']['message'] ?? 'Unknown')], 500);
+                $this->jsonResponse(['error' => 'Email failed: ' . ($result['message'] ?? 'Unknown')], 500);
             }
         } elseif ($type === 'wa') {
-            if ($result['wa']['success']) {
+            $phone = $user['phone'] ?? $user['phone_number'] ?? '';
+            if (empty($phone)) {
+                 $this->jsonResponse(['error' => 'User does not have a phone number'], 400);
+                 return;
+            }
+            $result = Notifier::sendWaTemplate($phone, 'admin_reset_password', $data);
+
+            if ($result['success']) {
                 $this->jsonResponse(['status' => 'sent', 'message' => 'WhatsApp sent']);
             } else {
-                $this->jsonResponse(['error' => 'WhatsApp failed: ' . ($result['wa']['message'] ?? 'Unknown')], 500);
+                $this->jsonResponse(['error' => 'WhatsApp failed: ' . ($result['message'] ?? 'Unknown')], 500);
             }
         } else {
             $this->jsonResponse(['error' => 'Invalid notification type'], 400);
         }
-
-        $this->jsonResponse($result);
     }
 
     public function clearResetFlash() {
