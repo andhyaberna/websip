@@ -22,12 +22,35 @@ class Router {
     public function dispatch($method, $uri) {
         // Remove query string
         $uri = parse_url($uri, PHP_URL_PATH);
+        
         // Remove base path from URI if needed
-        $scriptName = dirname($_SERVER['SCRIPT_NAME']);
-        if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
-            $uri = substr($uri, strlen($scriptName));
+        // Priority 1: Use BASE_URL if defined (handling subdirectory install)
+        if (defined('BASE_URL')) {
+            $basePath = parse_url(BASE_URL, PHP_URL_PATH);
+            // Ensure basePath doesn't end with slash unless it's just "/"
+            if ($basePath && $basePath !== '/' && substr($basePath, -1) === '/') {
+                $basePath = rtrim($basePath, '/');
+            }
+            
+            if ($basePath && strpos($uri, $basePath) === 0) {
+                $uri = substr($uri, strlen($basePath));
+            }
+        } 
+        
+        // Priority 2: Fallback to script name logic (if BASE_URL not reliable)
+        if ($uri === '' || $uri === false) { 
+             $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+             if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
+                 $uri = substr($uri, strlen($scriptName));
+             }
         }
-        if ($uri === '') $uri = '/';
+        
+        if ($uri === '' || $uri === false) $uri = '/';
+
+        // Normalize URI: Remove trailing slash if length > 1 to match routes defined without it
+        if (strlen($uri) > 1 && substr($uri, -1) === '/') {
+            $uri = rtrim($uri, '/');
+        }
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $method && preg_match($route['regex'], $uri, $matches)) {

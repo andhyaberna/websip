@@ -20,4 +20,13 @@
 
 <?php $content = ob_get_clean(); ?>
 
-<?php include __DIR__ . '/../layouts/guest.php'; ?>
+<?php
+// Ensure layout path is correct
+$layoutPath = __DIR__ . '/../layouts/guest.php';
+if (file_exists($layoutPath)) {
+    include $layoutPath;
+} else {
+    // Fallback if layout not found
+    echo $content;
+}
+?>

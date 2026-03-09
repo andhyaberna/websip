@@ -18,3 +18,15 @@
 [2026-03-07 18:21:59] Error (8192): htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\websip\app\views\admin\users\index.php:149
 [2026-03-07 18:21:59] Error (8192): htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\websip\app\views\admin\users\index.php:149
 [2026-03-07 18:21:59] Error (8192): htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\websip\app\views\admin\users\index.php:149
+[2026-03-09 15:34:53] Exception: Call to undefined method App\Controllers\AdminNotificationTemplateController::view() in C:\xampp\htdocs\websip\app\controllers\AdminNotificationTemplateController.php:20
+#0 [internal function]: App\Controllers\AdminNotificationTemplateController->index()
+#1 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#2 C:\xampp\htdocs\websip\public\index.php(173): App\Core\Router->dispatch('GET', '/admin/notifica...')
+#3 {main}
+[2026-03-09 15:34:57] Exception: Class "Auth" not found in C:\xampp\htdocs\websip\app\views\admin\settings\index.php:59
+#0 C:\xampp\htdocs\websip\app\core\functions.php(23): require()
+#1 C:\xampp\htdocs\websip\app\controllers\AdminSettingsController.php(31): view('admin/settings/...', Array)
+#2 [internal function]: App\Controllers\AdminSettingsController->index()
+#3 C:\xampp\htdocs\websip\app\core\Router.php(80): call_user_func_array(Array, Array)
+#4 C:\xampp\htdocs\websip\public\index.php(173): App\Core\Router->dispatch('GET', '/admin/settings')
+#5 {main}

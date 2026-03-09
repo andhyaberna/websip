@@ -80,8 +80,8 @@
             <div class="bg-white p-4 rounded-lg shadow space-y-3">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900"><?php echo htmlspecialchars($form['title']); ?></h3>
-                        <p class="text-sm text-gray-500"><?php echo htmlspecialchars($form['slug']); ?></p>
+                        <h3 class="text-lg font-semibold text-gray-900"><?php echo htmlspecialchars($form['title'] ?? ''); ?></h3>
+                        <p class="text-sm text-gray-500"><?php echo htmlspecialchars($form['slug'] ?? ''); ?></p>
                     </div>
                     <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $form['status'] === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
                         <?php echo ucfirst($form['status']); ?>

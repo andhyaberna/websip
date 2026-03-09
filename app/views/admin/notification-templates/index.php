@@ -24,14 +24,14 @@
         <tbody>
             <?php foreach ($templates as $template): ?>
                 <tr>
-                    <td><?= htmlspecialchars($template['code']) ?></td>
-                    <td><?= htmlspecialchars($template['name']) ?></td>
+                    <td><?= htmlspecialchars($template['code'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($template['name'] ?? '') ?></td>
                     <td>
-                        <span class="badge bg-<?= $template['type'] == 'email' ? 'primary' : 'success' ?>">
-                            <?= ucfirst($template['type']) ?>
+                        <span class="badge bg-<?= ($template['type'] ?? '') == 'email' ? 'primary' : 'success' ?>">
+                            <?= ucfirst($template['type'] ?? '') ?>
                         </span>
                     </td>
-                    <td><?= $template['type'] == 'email' ? htmlspecialchars($template['subject']) : '-' ?></td>
+                    <td><?= ($template['type'] ?? '') == 'email' ? htmlspecialchars($template['subject'] ?? '') : '-' ?></td>
                     <td>
                         <a href="/admin/notification-templates/<?= $template['id'] ?>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
                     </td>
