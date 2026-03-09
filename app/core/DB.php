@@ -1,5 +1,10 @@
 <?php
 
+namespace App\Core;
+
+use PDO;
+use PDOException;
+
 class DB {
     private static $instance = null;
     private $pdo;
@@ -19,19 +24,12 @@ class DB {
         } catch (PDOException $e) {
             $logDir = __DIR__ . '/../../storage/logs';
             if (!is_dir($logDir)) {
-                mkdir($logDir, 0755, true);
+                mkdir($logDir, 0777, true);
             }
-            $logFile = $logDir . '/db-error-' . date('Y-m-d') . '.log';
+            $errorLog = $logDir . '/db-error-' . date('Y-m-d') . '.log';
             $message = "[" . date('Y-m-d H:i:s') . "] Connection failed: " . $e->getMessage() . PHP_EOL;
-            file_put_contents($logFile, $message, FILE_APPEND);
-            
-            // Rethrow exception for the caller to handle if needed, or die.
-            // For Status page to work, we need to catch it.
-            // But for normal app flow, we might want to die.
-            // Let's modify to throw exception. The caller (like index.php or StatusController) should handle it.
-            // However, existing code might expect it to die.
-            // I'll throw a RuntimeException which is unchecked.
-            throw new Exception("Database connection error: " . $e->getMessage());
+            file_put_contents($errorLog, $message, FILE_APPEND);
+            die("Database connection failed. Please check logs.");
         }
     }
 
@@ -41,4 +39,10 @@ class DB {
         }
         return self::$instance->pdo;
     }
+
+    // Prevent cloning
+    private function __clone() {}
+
+    // Prevent unserializing
+    public function __wakeup() {}
 }

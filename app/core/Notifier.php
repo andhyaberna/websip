@@ -1,9 +1,9 @@
 <?php
 
-require_once __DIR__ . '/DB.php';
-require_once __DIR__ . '/Auth.php';
-require_once __DIR__ . '/Settings.php';
-require_once __DIR__ . '/UserPreferences.php';
+namespace App\Core;
+
+use CURLFile;
+use Throwable;
 
 class Notifier {
     
@@ -286,18 +286,10 @@ class Notifier {
 
     /**
      * Send Email using native mail()
-
      * 
      * @param string $to
      * @param string $subject
      * @param string $htmlBody
-     * @param int|null $userId Optional user ID for logging. If null, tries to get from Auth or context? No, better pass it.
-     *                         Actually, requirements say "user_id (bigint, FK)". So we MUST have a user_id.
-     *                         Wait, method signature in prompt is: sendEmail(string $to, string $subject, string $htmlBody): array
-     *                         It doesn't include user_id.
-     *                         But Requirement 3.2 says "Setiap pemanggilan ... wajib insert record baru".
-     *                         This implies I should pass user_id OR find the user by email.
-     *                         Finding by email is safer.
      * @return array
      */
     public static function sendEmail(string $to, string $subject, string $htmlBody): array {
@@ -520,7 +512,6 @@ class Notifier {
             $db = DB::getInstance();
             
             // Try to find user_id by recipient (email or phone)
-            // Ideally this should be passed, but sticking to signature.
             $userId = null;
             if ($type === 'email') {
                 $stmt = $db->prepare("SELECT id FROM users WHERE email = :r LIMIT 1");
@@ -533,15 +524,7 @@ class Notifier {
             }
 
             if (!$userId) {
-                // If user not found, we can't satisfy FK constraint.
-                // Requirement 3.1: user_id (bigint, FK)
-                // If sending to non-user, this will fail.
                 // Assuming we only send to users.
-                // If not found, maybe log with user_id=NULL? But FK constraint prevents it if not nullable.
-                // Prompt says "user_id (bigint, FK)". Doesn't say nullable.
-                // Let's assume we can find the user. If not, we might need to skip logging or use a fallback admin ID?
-                // Or maybe I should add user_id to the method signature as an optional param?
-                // The prompt signature is explicit. I'll rely on lookup.
                 return; 
             }
 
@@ -554,15 +537,13 @@ class Notifier {
                 ':uid' => $userId,
                 ':type' => $type,
                 ':rec' => $recipient,
-                ':content' => substr($content, 0, 65535), // Text limit
+                ':content' => substr($content, 0, 500),
                 ':status' => $status,
-                ':resp' => $response
+                ':resp' => substr($response, 0, 1000)
             ]);
-
+            
         } catch (Throwable $e) {
-            // Silent fail for logging to avoid breaking main flow?
-            // Or log to file system?
-            error_log("Notifier Log Failed: " . $e->getMessage());
+            // Silently fail logging to avoid recursion
         }
     }
 }

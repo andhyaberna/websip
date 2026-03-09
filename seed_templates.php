@@ -1,101 +1,36 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 
-require_once __DIR__ . '/app/core/DB.php';
-require_once __DIR__ . '/app/core/Settings.php';
+use App\Core\DB;
+use App\Core\Settings;
 
-echo "Seeding Notification Templates...\n";
+try {
+    // Register Success
+Settings::set('wa_template_register_success', "Halo {name}, selamat datang di WebSIP! Akun Anda berhasil dibuat. Silakan login untuk memulai.");
+Settings::set('email_template_register_success_subject', "Selamat Datang di WebSIP!");
+Settings::set('email_template_register_success_body', "<h3>Halo {name},</h3><p>Selamat datang di WebSIP! Akun Anda telah berhasil dibuat.</p><p>Silakan login ke dashboard member area untuk mengakses produk dan layanan kami.</p><p>Terima kasih,<br>Tim WebSIP</p>");
 
-$templates = [
-    // WhatsApp Templates
-    'wa_template_register_success' => [
-        'value' => "Halo {name}, terima kasih telah mendaftar di WebSIP. Akun Anda berhasil dibuat. Silakan login untuk melengkapi profil Anda.",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    'wa_template_otp' => [
-        'value' => "Kode OTP WebSIP Anda adalah *{otp}*. Jangan bagikan kode ini kepada siapapun. Berlaku selama 5 menit.",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    'wa_template_login_alert' => [
-        'value' => "Halo {name}, login baru terdeteksi di akun Anda.\nIP: {ip}\nWaktu: {time}\nJika ini bukan Anda, segera ubah password Anda.",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    
-    'wa_template_admin_reset_password' => [
-        'value' => "Halo {name}, password akun Anda telah direset oleh Admin.\nPassword Baru: {password}\nSilakan login dan segera ganti password Anda.",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    
-    // Email Templates
-    'email_template_otp_subject' => [
-        'value' => "Kode Verifikasi OTP",
-        'group' => 'notification',
-        'type' => 'text'
-    ],
-    'email_template_otp_body' => [
-        'value' => "<h3>Halo {name},</h3><p>Kode OTP Anda adalah: <b>{otp}</b></p><p>Kode ini berlaku untuk verifikasi akun Anda.</p>",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    'email_template_admin_reset_password_subject' => [
-        'value' => "Reset Password Oleh Admin",
-        'group' => 'notification',
-        'type' => 'text'
-    ],
-    'email_template_admin_reset_password_body' => [
-        'value' => "<p>Halo {name},</p><p>Password akun Anda telah direset oleh Admin.</p><p>Password Baru: <strong>{password}</strong></p><p>Silakan login dan segera ganti password Anda.</p>",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    'email_template_register_success_subject' => [
-        'value' => "Selamat Datang di WebSIP",
-        'group' => 'notification',
-        'type' => 'text'
-    ],
-    'email_template_register_success_body' => [
-        'value' => "<p>Halo {name},</p><p>Terima kasih telah mendaftar di WebSIP. Akun Anda telah berhasil dibuat.</p><p>Silakan login untuk melengkapi profil dan memulai.</p><p>Salam,<br>Tim WebSIP</p>",
-        'group' => 'notification',
-        'type' => 'textarea' // HTML supported
-    ],
-    'email_template_password_reset_subject' => [
-        'value' => "Reset Password WebSIP",
-        'group' => 'notification',
-        'type' => 'text'
-    ],
-    'email_template_password_reset_body' => [
-        'value' => "<p>Halo {name},</p><p>Kami menerima permintaan untuk mereset password akun Anda.</p><p>Klik link berikut untuk membuat password baru:</p><p><a href='{link}'>{link}</a></p><p>Jika Anda tidak meminta ini, abaikan email ini.</p>",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ],
-    'email_template_login_alert_subject' => [
-        'value' => "Login Alert - WebSIP",
-        'group' => 'notification',
-        'type' => 'text'
-    ],
-    'email_template_login_alert_body' => [
-        'value' => "<p>Halo {name},</p><p>Akun Anda baru saja login dari perangkat baru.</p><ul><li>IP: {ip}</li><li>Waktu: {time}</li></ul><p>Jika ini bukan Anda, segera amankan akun Anda.</p>",
-        'group' => 'notification',
-        'type' => 'textarea'
-    ]
-];
+// OTP
+Settings::set('wa_template_otp', "Kode OTP Anda adalah: {otp}. Jangan berikan kode ini kepada siapa pun.");
+Settings::set('email_template_otp_subject', "Kode OTP Anda");
+Settings::set('email_template_otp_body', "<h3>Halo {name},</h3><p>Kode OTP Anda adalah: <strong>{otp}</strong>.</p><p>Jangan berikan kode ini kepada siapa pun.</p>");
 
-$db = DB::getInstance();
+// Login Alert
+Settings::set('wa_template_login_alert', "Peringatan Keamanan: Akun WebSIP Anda baru saja login dari IP {ip} pada {time}. Jika ini bukan Anda, segera ubah password.");
+Settings::set('email_template_login_alert_subject', "Peringatan Login Baru");
+Settings::set('email_template_login_alert_body', "<h3>Halo {name},</h3><p>Akun WebSIP Anda baru saja login dari IP <strong>{ip}</strong> pada <strong>{time}</strong>.</p><p>Jika ini bukan Anda, segera ubah password Anda.</p>");
 
-foreach ($templates as $key => $data) {
-    // Check if exists
-    $stmt = $db->prepare("SELECT id FROM settings WHERE `key` = ?");
-    $stmt->execute([$key]);
-    
-    if ($stmt->rowCount() == 0) {
-        $stmt = $db->prepare("INSERT INTO settings (`key`, `value`, `group`, `type`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, NOW(), NOW())");
-        $stmt->execute([$key, $data['value'], $data['group'], $data['type']]);
-        echo "Inserted: $key\n";
-    } else {
-        echo "Skipped (exists): $key\n";
-    }
+// Password Reset
+Settings::set('email_template_password_reset_subject', "Reset Password WebSIP");
+Settings::set('email_template_password_reset_body', "<h3>Halo {name},</h3><p>Anda meminta untuk mereset password Anda. Klik link di bawah ini untuk melanjutkan:</p><p><a href='{link}'>{link}</a></p><p>Link ini akan kadaluarsa dalam 1 jam.</p>");
+
+// Admin Reset Password
+Settings::set('wa_template_admin_reset_password', "Password akun WebSIP Anda telah direset oleh Admin. Password baru Anda: {password}");
+Settings::set('email_template_admin_reset_password_subject', "Password Anda Telah Direset");
+Settings::set('email_template_admin_reset_password_body', "<h3>Halo {name},</h3><p>Password akun WebSIP Anda telah direset oleh Admin.</p><p>Password baru Anda adalah: <strong>{password}</strong></p><p>Silakan login dan segera ubah password Anda.</p>");
+
+echo "Templates seeded successfully.\n";
+
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }
-
-echo "Done.\n";

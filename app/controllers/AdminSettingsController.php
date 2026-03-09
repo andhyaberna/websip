@@ -1,8 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../core/Middleware.php';
-require_once __DIR__ . '/../core/Settings.php';
-require_once __DIR__ . '/../core/Notifier.php';
+namespace App\Controllers;
+
+use App\Core\Middleware;
+use App\Core\Settings;
+use App\Core\Notifier;
+use App\Core\DB;
+use App\Core\Auth;
+use PDO;
+use Exception;
 
 class AdminSettingsController {
 

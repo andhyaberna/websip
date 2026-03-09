@@ -5,26 +5,16 @@ if (session_status() == PHP_SESSION_NONE) session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Core\DB;
+use App\Core\Auth;
+use App\Controllers\AdminController;
+
 echo "Starting test script...\n";
 
-require_once __DIR__ . '/../../app/config/db.php';
-echo "Loaded db.php\n";
-require_once __DIR__ . '/../../app/core/DB.php';
-echo "Loaded DB.php\n";
-require_once __DIR__ . '/../../app/core/Auth.php';
-echo "Loaded Auth.php\n";
-// require_once __DIR__ . '/../../app/core/functions.php';
-// echo "Loaded functions.php\n";
-require_once __DIR__ . '/../../app/controllers/AdminController.php';
-echo "Loaded AdminController.php\n";
-
-class TestAdminController extends AdminController {
-    protected function redirect($url) {
-        echo "Redirected to: $url\n";
-    }
-}
-
-// Mock global functions
+// Mock global functions - Handled by APP_TESTING in functions.php
 if (!function_exists('view')) {
     function view($path, $data = []) {
         echo "View rendered: $path\n";
@@ -33,6 +23,12 @@ if (!function_exists('view')) {
 if (!function_exists('base_url')) {
     function base_url($path = '') {
         return "http://localhost/websip/" . $path;
+    }
+}
+
+class TestAdminController extends AdminController {
+    protected function redirect($url) {
+        echo "Redirected to: $url\n";
     }
 }
 

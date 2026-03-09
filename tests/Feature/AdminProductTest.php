@@ -1,22 +1,16 @@
 <?php
 
-require_once __DIR__ . '/../../app/config/db.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/functions.php';
-// AdminProductController requires Auth and Middleware.
-// We will let it load them, and we will simulate session state.
-require_once __DIR__ . '/../../app/controllers/AdminProductController.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Core\DB;
+use App\Controllers\AdminProductController;
 
 // Testable Controller
 class TestAdminProductController extends AdminProductController {
     public $redirectUrl;
-
-    public function __construct() {
-        // We can't skip parent constructor because it might do setup, 
-        // but here parent constructor calls Middleware::auth_admin().
-        // Since we set up session before instantiating, this should pass.
-        parent::__construct();
-    }
+    
+    // ...
 
     protected function redirect($url) {
         $this->redirectUrl = $url;
@@ -182,7 +176,7 @@ class AdminProductTest {
         $_POST = ['csrf_token' => 'test_token'];
 
         ob_start();
-        $this->controller->delete($id);
+        $this->controller->destroy($id);
         ob_end_clean();
 
         $stmt = $this->db->prepare("SELECT * FROM products WHERE id = ?");

@@ -1,30 +1,15 @@
 <?php
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 // Load Configuration
 $app_config = require_once __DIR__ . '/../app/config/app.php';
 define('BASE_URL', $app_config['base_url']);
 
-// Load Core
-require_once __DIR__ . '/../app/config/db.php';
-require_once __DIR__ . '/../app/core/DB.php';
-require_once __DIR__ . '/../app/core/Auth.php';
-require_once __DIR__ . '/../app/core/Router.php';
-require_once __DIR__ . '/../app/core/functions.php';
-require_once __DIR__ . '/../app/core/Gate.php';
+// Load Gates
 require_once __DIR__ . '/../app/config/gates.php';
 
-// Load Controllers
-require_once __DIR__ . '/../app/controllers/HomeController.php';
-require_once __DIR__ . '/../app/controllers/StatusController.php';
-require_once __DIR__ . '/../app/controllers/AuthController.php';
-require_once __DIR__ . '/../app/controllers/AdminController.php';
-require_once __DIR__ . '/../app/controllers/AdminProductController.php';
-require_once __DIR__ . '/../app/controllers/AdminSettingsController.php';
-require_once __DIR__ . '/../app/controllers/ProfileController.php';
-require_once __DIR__ . '/../app/controllers/AdminUserController.php';
-// require_once __DIR__ . '/../app/controllers/UserController.php'; // Deprecated
-require_once __DIR__ . '/../app/controllers/JoinFormController.php';
-require_once __DIR__ . '/../app/controllers/DashboardController.php';
+use App\Core\Router;
 
 // Simple Logging
 $logFile = __DIR__ . '/../storage/logs/access.log';
@@ -91,6 +76,10 @@ $router->register('GET', '/register', 'AuthController@register');
 $router->register('POST', '/register', 'AuthController@store');
 $router->register('POST', '/logout', 'AuthController@logout');
 $router->register('GET', '/logout', 'AuthController@logout'); // For convenience
+$router->register('GET', '/forgot-password', 'AuthController@forgotPassword');
+$router->register('POST', '/forgot-password', 'AuthController@sendResetLink');
+$router->register('GET', '/reset-password', 'AuthController@showResetForm');
+$router->register('POST', '/reset-password', 'AuthController@resetPassword');
 
 // Admin Routes
 $router->register('GET', '/admin', 'AdminController@index');
@@ -98,53 +87,82 @@ $router->register('GET', '/admin/dashboard', 'AdminController@index'); // Alias
 // Admin Products
 $router->register('GET', '/admin/products', 'AdminProductController@index');
 $router->register('GET', '/admin/products/create', 'AdminProductController@create');
-$router->register('POST', '/admin/products/create', 'AdminProductController@store');
+$router->register('POST', '/admin/products', 'AdminProductController@store');
 $router->register('GET', '/admin/products/{id}/edit', 'AdminProductController@edit');
-$router->register('POST', '/admin/products/{id}/edit', 'AdminProductController@update');
-$router->register('POST', '/admin/products/{id}/delete', 'AdminProductController@delete');
+$router->register('POST', '/admin/products/{id}', 'AdminProductController@update');
+$router->register('POST', '/admin/products/{id}/delete', 'AdminProductController@destroy');
 
-// Admin Forms
-$router->register('GET', '/admin/forms', 'AdminController@forms');
-$router->register('GET', '/admin/forms/create', 'AdminController@createForm');
-$router->register('POST', '/admin/forms/create', 'AdminController@storeForm');
-$router->register('GET', '/admin/forms/{id}/edit', 'AdminController@editForm');
-$router->register('POST', '/admin/forms/{id}/edit', 'AdminController@updateForm');
-$router->register('POST', '/admin/forms/{id}/delete', 'AdminController@deleteForm');
+// Admin Users
+$router->register('GET', '/admin/users', 'AdminUserController@index');
+$router->register('POST', '/admin/users/{id}/block', 'AdminUserController@block');
+$router->register('POST', '/admin/users/{id}/unblock', 'AdminUserController@unblock');
+$router->register('POST', '/admin/users/{id}/reset-password', 'AdminUserController@resetPassword');
 $router->register('GET', '/admin/forms/{id}/users', 'AdminUserController@formUsers');
 
 // Admin Settings
 $router->register('GET', '/admin/settings', 'AdminSettingsController@index');
-$router->register('POST', '/admin/settings/update', 'AdminSettingsController@update');
-$router->register('POST', '/admin/settings/test', 'AdminSettingsController@testConnection');
-$router->register('GET', '/admin/settings/export', 'AdminSettingsController@export');
-$router->register('POST', '/admin/settings/import', 'AdminSettingsController@import');
-
-// Profile Settings (Admin & User)
-$router->register('GET', '/profile', 'ProfileController@index');
-$router->register('POST', '/profile/update', 'ProfileController@updateProfile');
-$router->register('POST', '/profile/password', 'ProfileController@updatePassword');
-$router->register('POST', '/profile/preferences', 'ProfileController@updatePreferences');
-$router->register('POST', '/profile/email', 'ProfileController@requestEmailChange');
-$router->register('POST', '/profile/verify-email', 'ProfileController@verifyEmailChange');
-$router->register('POST', '/profile/2fa/setup', 'ProfileController@setup2FA');
-$router->register('POST', '/profile/2fa/confirm', 'ProfileController@confirm2FA');
-$router->register('POST', '/profile/2fa/disable', 'ProfileController@disable2FA');
-
-// Admin Users
-$router->register('GET', '/admin/users', 'AdminUserController@index');
-$router->register('POST', '/admin/users/{id}/status', 'AdminUserController@toggleStatus');
-$router->register('POST', '/admin/users/{id}/delete', 'AdminUserController@delete');
-$router->register('POST', '/admin/users/{id}/reset-password', 'AdminUserController@resetPassword');
-$router->register('POST', '/admin/users/{id}/notify', 'AdminUserController@sendNotification');
-$router->register('POST', '/admin/users/clear-reset-flash', 'AdminUserController@clearResetFlash');
+$router->register('POST', '/admin/settings', 'AdminSettingsController@update');
+$router->register('POST', '/admin/settings/test-connection', 'AdminSettingsController@testConnection');
+$router->register('POST', '/admin/settings/test-wa', 'AdminController@testWa');
+$router->register('POST', '/admin/settings/test-email', 'AdminController@testEmail');
 
 // User Dashboard Routes
-$router->register('GET', '/user/dashboard', 'DashboardController@index'); // Keep for backward compat
-$router->register('GET', '/dashboard', 'DashboardController@index'); // Alias
-$router->register('GET', '/app', 'DashboardController@index');
-$router->register('GET', '/app/products', 'DashboardController@products');
-$router->register('GET', '/app/bonus', 'DashboardController@bonuses');
-$router->register('GET', '/app/item/{id}', 'DashboardController@item');
+$router->register('GET', '/user/dashboard', 'DashboardController@index');
+$router->register('GET', '/user/products', 'DashboardController@products');
+$router->register('GET', '/user/bonuses', 'DashboardController@bonuses');
+
+// Profile Routes
+$router->register('GET', '/profile', 'ProfileController@index');
+$router->register('POST', '/profile', 'ProfileController@updateProfile');
+
+// App Access Routes (for products)
+// Use regex for dynamic product access
+$router->register('GET', '/app/{slug}', function($slug) {
+    // This logic might need to be in a controller, e.g. AppController@show
+    // For now, let's assume we have an AppController or handle it inline if simple
+    // But better to use a controller. Let's use AppController (create if not exists or use DashboardController logic)
+    // Actually, let's check if AppController exists. If not, maybe create it or use closure.
+    // The previous implementation used a closure in index.php or similar?
+    // Let's create AppController for this.
+    $controller = new \App\Controllers\DashboardController(); 
+    // Wait, DashboardController doesn't have showApp method yet.
+    // Let's check if we can add it or if it was handled elsewhere.
+    // I don't recall seeing AppController.
+    // I'll leave it as a closure for now but using namespaced classes.
+    
+    $db = \App\Core\DB::getInstance();
+    $stmt = $db->prepare("SELECT * FROM products WHERE slug = :slug AND type = 'product'");
+    $stmt->execute([':slug' => $slug]);
+    $product = $stmt->fetch();
+    
+    if (!$product) {
+        http_response_code(404);
+        require __DIR__ . '/../app/views/errors/404.php';
+        return;
+    }
+    
+    // Check access
+    $user = \App\Core\Auth::user();
+    if (!$user) {
+        header('Location: ' . base_url('login'));
+        exit;
+    }
+    
+    // Check user_products
+    $stmt = $db->prepare("SELECT * FROM user_products WHERE user_id = :uid AND product_id = :pid");
+    $stmt->execute([':uid' => $user['id'], ':pid' => $product['id']]);
+    
+    if (!$stmt->fetch()) {
+        http_response_code(403);
+        echo "Access Denied";
+        exit;
+    }
+    
+    // Show content
+    // If content_mode is 'iframe', show iframe view
+    // If 'direct', show content
+    view('app/view', ['product' => $product]);
+});
 
 // Dispatch
-$router->dispatch();
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

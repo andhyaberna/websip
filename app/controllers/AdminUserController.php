@@ -1,11 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../core/Auth.php';
-require_once __DIR__ . '/../core/DB.php';
-require_once __DIR__ . '/../core/Middleware.php';
-require_once __DIR__ . '/../core/Notifier.php';
-require_once __DIR__ . '/../models/AuditLog.php';
-require_once __DIR__ . '/../core/Gate.php';
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\DB;
+use App\Core\Middleware;
+use App\Core\Notifier;
+use App\Core\Gate;
+use App\Models\AuditLog;
+use PDO;
 
 class AdminUserController {
     public function __construct() {
@@ -146,8 +149,17 @@ class AdminUserController {
         ]);
     }
 
-    // Toggle Status
-    public function toggleStatus($id) {
+    // Block User
+    public function block($id) {
+        $this->changeStatus($id, 'blocked');
+    }
+
+    // Unblock User
+    public function unblock($id) {
+        $this->changeStatus($id, 'active');
+    }
+
+    private function changeStatus($id, $newStatus) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             exit;
@@ -162,12 +174,6 @@ class AdminUserController {
             $this->jsonResponse(['error' => 'User not found'], 404);
             return;
         }
-        
-        // Prevent blocking self? Maybe not strictly required but good practice.
-        // Requirement says "Validasi user ID harus valid".
-        // Let's implement toggle.
-        
-        $newStatus = $user['status'] === 'active' ? 'blocked' : 'active';
         
         $update = $db->prepare("UPDATE users SET status = :status WHERE id = :id");
         $update->execute([':status' => $newStatus, ':id' => $id]);

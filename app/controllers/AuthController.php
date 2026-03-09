@@ -1,15 +1,28 @@
 <?php
 
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\DB;
+use App\Core\TwoFactorAuth;
+use App\Core\UserPreferences;
+use App\Core\Notifier;
+use Exception;
+
 class AuthController {
+
+    protected function redirect($url) {
+        header('Location: ' . $url);
+        exit;
+    }
 
     public function login() {
         if (Auth::check()) {
             if (Auth::isAdmin()) {
-                header('Location: ' . base_url('admin/dashboard'));
+                $this->redirect(base_url('admin/dashboard'));
             } else {
-                header('Location: ' . base_url('user/dashboard'));
+                $this->redirect(base_url('user/dashboard'));
             }
-            exit;
         }
 
         view('auth/login', [
@@ -19,8 +32,7 @@ class AuthController {
 
     public function authenticate() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . base_url('login'));
-            exit;
+            $this->redirect(base_url('login'));
         }
 
         $email = $_POST['email'] ?? '';
@@ -91,21 +103,18 @@ class AuthController {
     
     public function show2FA() {
         if (!isset($_SESSION['2fa_pending_user_id'])) {
-            header('Location: ' . base_url('login'));
-            exit;
+            $this->redirect(base_url('login'));
         }
         view('auth/2fa', ['csrf_token' => Auth::generateCSRF()]);
     }
     
     public function verify2FA() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-             header('Location: ' . base_url('login/2fa'));
-             exit;
+             $this->redirect(base_url('login/2fa'));
         }
         
         if (!isset($_SESSION['2fa_pending_user_id'])) {
-             header('Location: ' . base_url('login'));
-             exit;
+             $this->redirect(base_url('login'));
         }
 
         $code = $_POST['code'] ?? '';
@@ -131,7 +140,6 @@ class AuthController {
              exit;
         }
         
-        require_once __DIR__ . '/../core/TwoFactorAuth.php';
         if (TwoFactorAuth::verifyCode($user['two_factor_secret'], $code)) {
             // Success
             Auth::login($user); // Re-login fully
@@ -161,8 +169,7 @@ class AuthController {
 
     public function register() {
         if (Auth::check()) {
-            header('Location: ' . base_url('dashboard'));
-            exit;
+            $this->redirect(base_url('dashboard'));
         }
 
         view('auth/register', [
@@ -172,8 +179,7 @@ class AuthController {
 
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . base_url('register'));
-            exit;
+            $this->redirect(base_url('register'));
         }
 
         $name = $_POST['name'] ?? '';
@@ -234,8 +240,14 @@ class AuthController {
             Auth::login($user);
             $this->logLogin($userId);
 
-            header('Location: ' . base_url('dashboard'));
-            exit;
+            // Send Notification
+            try {
+                Notifier::sendRegisterSuccess($user);
+            } catch (Exception $e) {
+                // Ignore notification errors to not block registration flow
+            }
+
+            $this->redirect(base_url('dashboard'));
 
         } catch (Exception $e) {
             view('auth/register', [
@@ -256,22 +268,175 @@ class AuthController {
         $stmt->execute([':uid' => $userId, ':ip' => $ip, ':ua' => $ua]);
         
         // Check for new device notification preference
-        require_once __DIR__ . '/../core/UserPreferences.php';
-        require_once __DIR__ . '/../core/Notifier.php';
+        // Notifier handles preference checks internally
+        $stmt = $db->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch();
         
-        if (UserPreferences::get($userId, 'email_notif_login', '0') == '1') {
-            // Need to get user details
-            $stmt = $db->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->execute([':id' => $userId]);
-            $user = $stmt->fetch();
-            
-            if ($user) {
-                try {
-                    Notifier::sendLoginAlert($user, $ip);
-                } catch (Exception $e) {
-                    // Ignore notification failure
-                }
+        if ($user) {
+            try {
+                Notifier::sendLoginAlert($user, $ip);
+            } catch (Exception $e) {
+                // Ignore notification failure
             }
         }
+    }
+
+    public function forgotPassword() {
+        if (Auth::check()) {
+            $this->redirect(base_url('dashboard'));
+        }
+        view('auth/forgot-password', [
+            'csrf_token' => Auth::generateCSRF()
+        ]);
+    }
+
+    public function sendResetLink() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect(base_url('forgot-password'));
+        }
+
+        $email = $_POST['email'] ?? '';
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!Auth::checkCSRF($csrf_token)) {
+             view('auth/forgot-password', [
+                'error' => 'Invalid CSRF token.',
+                'csrf_token' => Auth::generateCSRF(),
+                'old_email' => $email
+            ]);
+            return;
+        }
+
+        $db = DB::getInstance();
+        $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if ($user) {
+            try {
+                // Generate Token
+                $token = bin2hex(random_bytes(32));
+                
+                // Delete old tokens
+                $stmt = $db->prepare("DELETE FROM password_resets WHERE email = ?");
+                $stmt->execute([$email]);
+                
+                // Insert new token
+                $stmt = $db->prepare("INSERT INTO password_resets (email, token, created_at) VALUES (?, ?, NOW())");
+                $stmt->execute([$email, $token]);
+                
+                // Send Email
+                $link = base_url('reset-password?token=' . $token . '&email=' . urlencode($email));
+                Notifier::sendPasswordReset($user, $link);
+            } catch (Exception $e) {
+                // Log error but don't show user
+            }
+        }
+
+        // Always show success message to prevent user enumeration
+        view('auth/forgot-password', [
+            'success' => 'If an account exists for that email, we have sent a password reset link.',
+            'csrf_token' => Auth::generateCSRF()
+        ]);
+    }
+
+    public function showResetForm() {
+        if (Auth::check()) {
+            $this->redirect(base_url('dashboard'));
+        }
+        $token = $_GET['token'] ?? '';
+        $email = $_GET['email'] ?? '';
+        
+        view('auth/reset-password', [
+            'token' => $token,
+            'email' => $email,
+            'csrf_token' => Auth::generateCSRF()
+        ]);
+    }
+
+    public function resetPassword() {
+         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect(base_url('login'));
+        }
+        
+        $token = $_POST['token'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $password_confirmation = $_POST['password_confirmation'] ?? '';
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!Auth::checkCSRF($csrf_token)) {
+             view('auth/reset-password', [
+                'error' => 'Invalid CSRF token.',
+                'token' => $token,
+                'email' => $email,
+                'csrf_token' => Auth::generateCSRF()
+            ]);
+            return;
+        }
+        
+        if (strlen($password) < 8) {
+             view('auth/reset-password', [
+                'error' => 'Password must be at least 8 characters.',
+                'token' => $token,
+                'email' => $email,
+                'csrf_token' => Auth::generateCSRF()
+            ]);
+            return;
+        }
+
+        if ($password !== $password_confirmation) {
+             view('auth/reset-password', [
+                'error' => 'Passwords do not match.',
+                'token' => $token,
+                'email' => $email,
+                'csrf_token' => Auth::generateCSRF()
+            ]);
+            return;
+        }
+
+        $db = DB::getInstance();
+        
+        // Verify Token
+        $stmt = $db->prepare("SELECT * FROM password_resets WHERE email = ? AND token = ?");
+        $stmt->execute([$email, $token]);
+        $record = $stmt->fetch();
+        
+        if (!$record) {
+             view('auth/reset-password', [
+                'error' => 'Invalid or expired password reset token.',
+                'token' => $token,
+                'email' => $email,
+                'csrf_token' => Auth::generateCSRF()
+            ]);
+            return;
+        }
+        
+        // Check expiry (1 hour)
+        $createdAt = strtotime($record['created_at']);
+        if (time() - $createdAt > 3600) {
+             view('auth/reset-password', [
+                'error' => 'Password reset token has expired.',
+                'token' => $token,
+                'email' => $email,
+                'csrf_token' => Auth::generateCSRF()
+            ]);
+            return;
+        }
+        
+        // Update Password
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE email = ?");
+        $stmt->execute([$hash, $email]);
+        
+        // Delete Token
+        $stmt = $db->prepare("DELETE FROM password_resets WHERE email = ?");
+        $stmt->execute([$email]);
+        
+        view('auth/login', [
+            'success' => 'Your password has been reset!',
+            'csrf_token' => Auth::generateCSRF()
+        ]);
     }
 }

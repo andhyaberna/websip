@@ -58,3 +58,6 @@
 [2026-03-07 19:00:16] ::1 GET /websip/admin/products
 [2026-03-07 19:00:19] ::1 GET /websip/admin/dashboard
 [2026-03-07 19:00:21] ::1 GET /websip/admin/settings
+[2026-03-07 19:27:51] ::1 GET /websip/admin/settings
+[2026-03-07 19:27:57] ::1 GET /websip/admin/dashboard
+[2026-03-07 19:28:03] ::1 GET /websip/

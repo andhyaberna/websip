@@ -1,10 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../core/Auth.php';
-require_once __DIR__ . '/../core/DB.php';
-require_once __DIR__ . '/../core/Middleware.php';
-require_once __DIR__ . '/../core/UserPreferences.php';
-require_once __DIR__ . '/../core/Notifier.php';
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\DB;
+use App\Core\Middleware;
+use App\Core\UserPreferences;
+use App\Core\Notifier;
+use App\Core\TwoFactorAuth;
+use PDO;
 
 class ProfileController {
 
@@ -309,7 +313,6 @@ class ProfileController {
             return;
         }
 
-        require_once __DIR__ . '/../core/TwoFactorAuth.php';
         if (TwoFactorAuth::verifyCode($secret, $code)) {
             $db = DB::getInstance();
             $stmt = $db->prepare("UPDATE users SET two_factor_secret = :secret, two_factor_enabled = 1 WHERE id = :id");

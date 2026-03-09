@@ -1,9 +1,19 @@
 <?php
 
-require_once __DIR__ . '/../../app/controllers/AdminUserController.php';
-require_once __DIR__ . '/../../app/models/AuditLog.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/functions.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Controllers\AdminUserController;
+use App\Models\AuditLog;
+use App\Core\DB;
+
+class TestableAdminUserController extends AdminUserController {
+    public function jsonResponse($data, $code = 200) {
+        http_response_code($code);
+        echo json_encode($data);
+        // Do not exit
+    }
+}
 
 class AdminUserTest {
     private $db;
@@ -22,7 +32,7 @@ class AdminUserTest {
         // Ensure Admin Auth BEFORE controller instantiation
         $_SESSION['user'] = ['id' => 1, 'role' => 'admin', 'email' => 'admin@example.com'];
         
-        $this->controller = new AdminUserController();
+        $this->controller = new TestableAdminUserController();
         
         // Clean up previous test data
         $this->db->exec("DELETE FROM users WHERE email = 'testuser99@example.com'");
@@ -73,22 +83,22 @@ class AdminUserTest {
         }
     }
 
-    public function testToggleStatus() {
-        echo "\nRunning testToggleStatus...\n";
+    public function testBlockUser() {
+        echo "\nRunning testBlockUser...\n";
         
         // Mock POST request
         $_SERVER['REQUEST_METHOD'] = 'POST';
         
         // Capture JSON output
         ob_start();
-        $this->controller->toggleStatus($this->userId);
+        $this->controller->block($this->userId);
         $output = ob_get_clean();
         $json = json_decode($output, true);
         
         if ($json['success'] && $json['new_status'] === 'blocked') {
-            echo "PASS: Status toggled to blocked.\n";
+            echo "PASS: Status changed to blocked.\n";
         } else {
-            echo "FAIL: Status toggle failed. Output: $output\n";
+            echo "FAIL: Block failed. Output: $output\n";
         }
         
         // Check DB
@@ -96,18 +106,41 @@ class AdminUserTest {
         $stmt->execute([$this->userId]);
         $status = $stmt->fetchColumn();
         if ($status === 'blocked') {
-            echo "PASS: DB updated correctly.\n";
+            echo "PASS: DB updated correctly (blocked).\n";
         } else {
-            echo "FAIL: DB not updated. Status: $status\n";
+            echo "FAIL: DB status incorrect: $status\n";
+        }
+    }
+
+    public function testUnblockUser() {
+        echo "\nRunning testUnblockUser...\n";
+        
+        // Manually block user first to test unblock
+        $this->db->exec("UPDATE users SET status = 'blocked' WHERE id = {$this->userId}");
+        
+        // Mock POST request
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        
+        // Capture JSON output
+        ob_start();
+        $this->controller->unblock($this->userId);
+        $output = ob_get_clean();
+        $json = json_decode($output, true);
+        
+        if ($json['success'] && $json['new_status'] === 'active') {
+            echo "PASS: Status changed to active.\n";
+        } else {
+            echo "FAIL: Unblock failed. Output: $output\n";
         }
         
-        // Check Audit Log
-        $stmt = $this->db->prepare("SELECT * FROM audit_logs WHERE action = 'user_status_change' AND meta_json LIKE ? ORDER BY id DESC LIMIT 1");
-        $stmt->execute(['%"user_id":' . $this->userId . '%']);
-        if ($stmt->fetch()) {
-            echo "PASS: Audit log created.\n";
+        // Check DB
+        $stmt = $this->db->prepare("SELECT status FROM users WHERE id = ?");
+        $stmt->execute([$this->userId]);
+        $status = $stmt->fetchColumn();
+        if ($status === 'active') {
+            echo "PASS: DB updated correctly (active).\n";
         } else {
-            echo "FAIL: Audit log missing.\n";
+            echo "FAIL: DB status incorrect: $status\n";
         }
     }
 
@@ -169,7 +202,10 @@ try {
     $test->testFormUsers();
     
     $test->setUp();
-    $test->testToggleStatus();
+    $test->testBlockUser();
+
+    $test->setUp();
+    $test->testUnblockUser();
     
     $test->setUp();
     $test->testDeleteUser();

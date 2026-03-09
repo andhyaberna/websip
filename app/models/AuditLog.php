@@ -1,5 +1,11 @@
 <?php
 
+namespace App\Models;
+
+use App\Core\DB;
+use App\Core\Auth;
+use PDO;
+
 class AuditLog {
     public static function log($action, $meta = []) {
         $db = DB::getInstance();

@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/Auth.php';
+namespace App\Core;
 
 class Gate {
     protected static $abilities = [];

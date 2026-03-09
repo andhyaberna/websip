@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Core;
+
 class Router {
     protected $routes = [];
 
@@ -8,65 +10,72 @@ class Router {
         $regex = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '([^/]+)', $path);
         // Add start and end delimiters
         $regex = "#^" . $regex . "$#";
-        
-        $this->routes[$method][$path] = [
-            'handler' => $handler,
-            'regex' => $regex
+
+        $this->routes[] = [
+            'method' => $method,
+            'path' => $path, // Original path for debugging
+            'regex' => $regex,
+            'handler' => $handler
         ];
     }
 
-    public function dispatch($path = null) {
-        $method = $_SERVER['REQUEST_METHOD'];
-        
-        if ($path === null) {
-            $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            
-            // Get Script Directory (e.g. /websip/public)
-            $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-            
-            // Get Parent Directory (e.g. /websip) - for when public is hidden
-            $parentDir = dirname($scriptDir);
-            
-            // Remove base path if exists
-            if ($scriptDir !== '/' && strpos($path, $scriptDir) === 0) {
-                // Standard case: /websip/public/login
-                $path = substr($path, strlen($scriptDir));
-            } elseif ($parentDir !== '/' && $parentDir !== '.' && strpos($path, $parentDir) === 0) {
-                // Hidden public case: /websip/login
-                $path = substr($path, strlen($parentDir));
-            }
-            
-            // Ensure path starts with /
-            if (empty($path) || $path[0] !== '/') {
-                $path = '/' . $path;
-            }
+    public function dispatch($method, $uri) {
+        // Remove query string
+        $uri = parse_url($uri, PHP_URL_PATH);
+        // Remove base path from URI if needed
+        $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+        if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
+            $uri = substr($uri, strlen($scriptName));
         }
-        
-        if ($path === false || $path === '') {
-            $path = '/';
-        }
+        if ($uri === '') $uri = '/';
 
-        if (isset($this->routes[$method])) {
-            foreach ($this->routes[$method] as $routePath => $route) {
-                if (preg_match($route['regex'], $path, $matches)) {
-                    array_shift($matches); // Remove full match
-                    
-                    $handler = $route['handler'];
-                    
-                    if (is_callable($handler)) {
-                        call_user_func_array($handler, $matches);
-                    } elseif (is_string($handler)) {
-                        list($controller, $action) = explode('@', $handler);
-                        require_once __DIR__ . "/../controllers/{$controller}.php";
-                        $controllerInstance = new $controller();
-                        call_user_func_array([$controllerInstance, $action], $matches);
+        foreach ($this->routes as $route) {
+            if ($route['method'] === $method && preg_match($route['regex'], $uri, $matches)) {
+                array_shift($matches); // Remove full match
+                
+                // Handler can be 'Controller@method', [Controller::class, 'method'] or closure
+                if (is_string($route['handler']) && strpos($route['handler'], '@') !== false) {
+                    list($controllerName, $actionName) = explode('@', $route['handler']);
+                } elseif (is_array($route['handler'])) {
+                    $controllerName = $route['handler'][0];
+                    $actionName = $route['handler'][1];
+                }
+
+                if (isset($controllerName) && isset($actionName)) {
+                    // If controllerName is fully qualified, use it directly
+                    // Otherwise assume it's in App\Controllers
+                    if (strpos($controllerName, '\\') === false) {
+                        $controllerClass = "App\\Controllers\\$controllerName";
+                    } else {
+                        $controllerClass = $controllerName;
                     }
+                    
+                    if (class_exists($controllerClass)) {
+                        $controller = new $controllerClass();
+                        if (method_exists($controller, $actionName)) {
+                            // Pass parameters to the action
+                            call_user_func_array([$controller, $actionName], $matches);
+                            return;
+                        }
+                    } else {
+                        // Fallback for global controllers if not found in App\Controllers
+                         if (class_exists($controllerName)) {
+                            $controller = new $controllerName();
+                            if (method_exists($controller, $actionName)) {
+                                call_user_func_array([$controller, $actionName], $matches);
+                                return;
+                            }
+                        }
+                    }
+                } elseif (is_callable($route['handler'])) {
+                    call_user_func_array($route['handler'], $matches);
                     return;
                 }
             }
         }
 
+        // 404 Not Found
         http_response_code(404);
-        echo "404 Not Found";
+        require __DIR__ . '/../views/errors/404.php';
     }
 }

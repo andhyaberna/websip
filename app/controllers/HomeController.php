@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 class HomeController {
     public function index() {
         // Echo the view as requested

@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Core;
+
+use Exception;
+
 class Auth {
     public static function start_session() {
         if (session_status() == PHP_SESSION_NONE) {
@@ -104,9 +108,9 @@ class Auth {
 
     public static function checkCSRF($token) {
         self::start_session();
-        if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        if (empty($_SESSION['csrf_token']) || empty($token)) {
             return false;
         }
-        return true;
+        return hash_equals($_SESSION['csrf_token'], $token);
     }
 }

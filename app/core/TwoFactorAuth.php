@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Core;
+
 class TwoFactorAuth {
     private static $passCodeLength = 6;
     private static $secretLength = 16;

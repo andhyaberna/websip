@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../core/Gate.php';
+use App\Core\Gate;
 
 // Define Permissions
 Gate::define('users.reset-password', function($user) {

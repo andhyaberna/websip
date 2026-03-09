@@ -1,6 +1,11 @@
 <?php
 
-require_once __DIR__ . '/../core/Middleware.php';
+namespace App\Controllers;
+
+use App\Core\Middleware;
+use App\Core\Auth;
+use App\Core\DB;
+use PDO;
 
 class DashboardController {
     

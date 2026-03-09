@@ -50,10 +50,10 @@
                 </div>
                 
                 <div class="mt-4 text-center">
-                    <a class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800" href="#">
-                        Forgot Password?
-                    </a>
-                </div>
+            <a class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800" href="<?= base_url('forgot-password') ?>">
+                Forgot Password?
+            </a>
+        </div>
             </form>
         </div>
     </div>

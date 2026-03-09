@@ -1,5 +1,12 @@
 <?php
 
+namespace App\Controllers;
+
+use App\Core\DB;
+use PDO;
+use PDOException;
+use Exception;
+
 class StatusController {
     public function index() {
         $dbStatus = false;
@@ -40,8 +47,10 @@ class StatusController {
 
         // Check for JSON request or if connection failed for monitoring
         if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
-            header('Content-Type: application/json');
-            http_response_code($dbStatus ? 200 : 500);
+            if (!defined('APP_TESTING')) {
+                header('Content-Type: application/json');
+                http_response_code($dbStatus ? 200 : 500);
+            }
             echo json_encode([
                 'status' => $dbStatus ? 'OK' : 'ERROR',
                 'message' => $dbMessage,
@@ -49,7 +58,7 @@ class StatusController {
                 'timestamp' => date('c')
             ]);
             
-            if (!defined('TESTING')) {
+            if (!defined('APP_TESTING')) {
                 exit;
             }
             return;

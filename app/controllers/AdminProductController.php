@@ -1,8 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../core/Auth.php';
-require_once __DIR__ . '/../core/DB.php';
-require_once __DIR__ . '/../core/Middleware.php';
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\DB;
+use App\Core\Middleware;
+use PDO;
+use PDOException;
 
 class AdminProductController {
 
@@ -189,7 +195,7 @@ class AdminProductController {
         }
     }
 
-    public function delete($id) {
+    public function destroy($id) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect(base_url('admin/products'));
         }

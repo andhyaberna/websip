@@ -1,10 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../../app/controllers/ProfileController.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/Auth.php';
-require_once __DIR__ . '/../../app/core/TwoFactorAuth.php';
-require_once __DIR__ . '/../../app/core/functions.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Controllers\ProfileController;
+use App\Core\DB;
+use App\Core\Auth;
+use App\Core\TwoFactorAuth;
 
 // Mock Controller to override redirect
 class TestProfileController extends ProfileController {

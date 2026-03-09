@@ -1,28 +1,20 @@
 <?php
 
-require_once __DIR__ . '/../../app/config/db.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/Auth.php';
-// require_once __DIR__ . '/../../app/core/functions.php'; // Removed to allow mocking
-require_once __DIR__ . '/../../app/controllers/JoinFormController.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Controllers\JoinFormController;
+use App\Core\DB;
+use App\Core\Auth;
 
 // Mock View Function
-if (!function_exists('view')) {
-    function view($path, $data = []) {
-        extract($data);
-        echo "View Loaded: $path\n";
-        if (isset($errors)) {
-            echo "Errors: " . implode(', ', $errors) . "\n";
-        }
+mock_view(function($path, $data) {
+    extract($data);
+    echo "View Loaded: $path\n";
+    if (isset($errors)) {
+        echo "Errors: " . implode(', ', $errors) . "\n";
     }
-}
-
-// Mock Base URL
-if (!function_exists('base_url')) {
-    function base_url($path = '') {
-        return "http://localhost/websip/" . $path;
-    }
-}
+});
 
 // Mock Redirect Controller
 class TestJoinFormController extends JoinFormController {

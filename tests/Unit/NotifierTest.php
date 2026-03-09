@@ -1,9 +1,11 @@
 <?php
 
-require_once __DIR__ . '/../../app/config/db.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/Settings.php';
-require_once __DIR__ . '/../../app/core/Notifier.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Core\DB;
+use App\Core\Settings;
+use App\Core\Notifier;
 
 // Simple Test Framework for Environment without PHPUnit
 class SimpleTestCase {

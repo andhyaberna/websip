@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Core;
+
+use PDO;
+
 class UserPreferences {
     protected static $cache = [];
 

@@ -1,11 +1,15 @@
 <?php
 
-require_once __DIR__ . '/../../app/controllers/AdminUserController.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/Notifier.php';
-require_once __DIR__ . '/../../app/core/functions.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-require_once __DIR__ . '/../../app/core/Gate.php';
+use App\Controllers\AdminUserController;
+use App\Core\DB;
+use App\Core\Notifier;
+use App\Core\Auth;
+use App\Core\Gate;
+
+// Load Gates
 require_once __DIR__ . '/../../app/config/gates.php';
 
 class TestableAdminUserController extends AdminUserController {
@@ -46,6 +50,11 @@ class AdminResetPasswordTest {
         
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['HTTP_ACCEPT'] = 'application/json'; // Mock JSON Request
+        
+        // Check Debug Info
+        echo "Auth::check(): " . (Auth::check() ? 'true' : 'false') . "\n";
+        echo "Auth::user(): " . print_r(Auth::user(), true) . "\n";
+        echo "Gate::allows('users.reset-password'): " . (Gate::allows('users.reset-password') ? 'true' : 'false') . "\n";
         
         ob_start();
         $this->controller->resetPassword($this->userId);

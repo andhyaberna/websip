@@ -1,35 +1,26 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) session_start();
 
-require_once __DIR__ . '/../../app/config/db.php';
-require_once __DIR__ . '/../../app/core/DB.php';
-require_once __DIR__ . '/../../app/core/Auth.php';
-// require_once __DIR__ . '/../../app/core/functions.php'; // Mocking view/base_url
-require_once __DIR__ . '/../../app/controllers/DashboardController.php';
+define('APP_TESTING', true);
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-// Mock functions
-if (!function_exists('view')) {
-    function view($path, $data = []) {
-        echo "View rendered: $path\n";
-        if (isset($data['items'])) {
-            echo "Items count: " . count($data['items']) . "\n";
-        }
-        if (isset($data['productCount'])) {
-            echo "Stats: P={$data['productCount']}, B={$data['bonusCount']}\n";
-        }
-        if (isset($data['item'])) {
-            echo "Item Title: " . $data['item']['title'] . "\n";
-            if (isset($data['item']['html_content'])) echo "Item HTML: " . substr($data['item']['html_content'], 0, 20) . "...\n";
-            if (isset($data['links'])) echo "Item Links Count: " . count($data['links']) . "\n";
-        }
+use App\Controllers\DashboardController;
+use App\Core\DB;
+
+// Mock View
+mock_view(function($path, $data) {
+    echo "View rendered: $path\n";
+    if (isset($data['productCount'])) {
+        echo "Stats: P={$data['productCount']}, B={$data['bonusCount']}\n";
     }
-}
-
-if (!function_exists('base_url')) {
-    function base_url($path = '') {
-        return "http://localhost/websip/" . $path;
+    if (isset($data['items'])) {
+        echo "Items count: " . count($data['items']) . "\n";
     }
-}
+    if (isset($data['item'])) {
+        echo "Item Title: " . $data['item']['title'] . "\n";
+        if (isset($data['item']['html_content'])) echo "Item HTML: " . substr($data['item']['html_content'], 0, 20) . "...\n";
+        if (isset($data['links'])) echo "Item Links Count: " . count($data['links']) . "\n";
+    }
+});
 
 class DashboardTest {
     private $db;
@@ -76,6 +67,10 @@ class DashboardTest {
 
     public function testIndexStats() {
         echo "\nRunning testIndexStats...\n";
+        
+        // Ensure request is not Ajax
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = ''; 
+        
         ob_start();
         $this->controller->index();
         $output = ob_get_clean();

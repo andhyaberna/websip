@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Core;
+
+use App\Core\DB;
+
 class Settings {
     protected static $cache = [];
 

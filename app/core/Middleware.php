@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Core;
+
+use App\Core\Auth;
+
 class Middleware {
     public static function auth_user() {
         if (!Auth::check()) {
